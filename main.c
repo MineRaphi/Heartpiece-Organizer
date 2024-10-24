@@ -13,11 +13,16 @@
 
 int createProject(char name[]);
 char** readProjectList(int *projectCount);
+int checkProjectList();
 
 int main() {
-    
-    // Create a new project
-    createProject("project1");
+    // DO NOT REMOVE OR MODIFY THE FOLLOWING STATEMENTS
+    if (checkProjectList() == 1) {
+        printf("Project list created\n");
+        printf("Start again to use the program\n");
+        scanf("%*c");
+        return 1;
+    }
     
     return 0;
 }
@@ -25,6 +30,57 @@ int main() {
 
 
 // Function defintions
+
+// a function that checks if the projectList exists and creates it if it doesn't
+int checkProjectList() {
+    FILE *projectList;
+
+    // Open the projectList in read mode
+    projectList = fopen("projects/projectList.hpo", "r");
+
+    if (projectList == NULL) {
+        fclose(projectList);
+        projectList = fopen("projects/projectList.hpo", "w");
+        fprintf(projectList, "0\n");
+        return 1;
+    }
+    else {
+        fclose(projectList);
+        return 0;
+    }
+}
+
+// a function that reads the project list and returns an array of project names
+char** readProjectList(int *projectCount) {
+    FILE *projectListRead;
+    char **projectNames;
+
+    // Open the projectList in read mode
+    projectListRead = fopen("projects/projectList.hpo", "r");
+    if (projectListRead == NULL) {
+        perror("Error opening project list file");
+        return NULL;
+    }
+
+    // Read the number of projects in the projectList
+    fscanf(projectListRead, "%d", projectCount);
+
+    // Allocate memory for the array of project names
+    projectNames = (char **)malloc(*projectCount * sizeof(char *));
+    for (int i = 0; i < *projectCount; i++) {
+        projectNames[i] = (char *)malloc(100 * sizeof(char));
+    }
+
+    // Read the names of the projects in the projectList
+    for (int i = 0; i < *projectCount; i++) {
+        fscanf(projectListRead, "%s", projectNames[i]);
+    }
+
+    // Close the projectList file
+    fclose(projectListRead);
+
+    return projectNames;
+}
 
 // a function that creates a new project directory
 int createProject(char name[]) {
@@ -72,33 +128,3 @@ int createProject(char name[]) {
     return 0;
 }
 
-char** readProjectList(int *projectCount) {
-    FILE *projectListRead;
-    char **projectNames;
-
-    // Open the projectList in read mode
-    projectListRead = fopen("projects/projectList.hpo", "r");
-    if (projectListRead == NULL) {
-        perror("Error opening project list file");
-        return NULL;
-    }
-
-    // Read the number of projects in the projectList
-    fscanf(projectListRead, "%d", projectCount);
-
-    // Allocate memory for the array of project names
-    projectNames = (char **)malloc(*projectCount * sizeof(char *));
-    for (int i = 0; i < *projectCount; i++) {
-        projectNames[i] = (char *)malloc(100 * sizeof(char));
-    }
-
-    // Read the names of the projects in the projectList
-    for (int i = 0; i < *projectCount; i++) {
-        fscanf(projectListRead, "%s", projectNames[i]);
-    }
-
-    // Close the projectList file
-    fclose(projectListRead);
-
-    return projectNames;
-}
