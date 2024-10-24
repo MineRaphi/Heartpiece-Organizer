@@ -1,22 +1,30 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <termios.h>
 // Include the appropriate header file for the operating system
 #ifdef _WIN32
 #include <direct.h>
 #define MKDIR(path) _mkdir(path)
+#define CLEAR_SCREEN "cls"
 #else
 #include <sys/stat.h>
 #include <sys/types.h>
 #define MKDIR(path) mkdir(path, 0755)
+#define CLEAR_SCREEN "clear"
 #endif
 
-int createProject(char name[]);
-char** readProjectList(int *projectCount);
+int menu();
 int checkProjectList();
+char** readProjectList(int *projectCount);
+int createProject(char name[]);
+void disable_input_buffering(struct termios* old_tio);
+void restore_input_buffering(struct termios* old_tio);
+int getch();
 
 int main() {
-    // DO NOT REMOVE OR MODIFY THE FOLLOWING STATEMENTS
+    // DO NOT REMOVE OR MODIFY THE FOLLOWING IF STATEMENT
     if (checkProjectList() == 1) {
         printf("Project list created\n");
         printf("Start again to use the program\n");
@@ -24,12 +32,44 @@ int main() {
         return 1;
     }
     
+    if (menu() == 2) {
+        return 0;
+    }
+
     return 0;
 }
 
 
 
 // Function defintions
+
+// a function that displays the menu
+int menu() {
+    system(CLEAR_SCREEN);
+    char choice;
+    printf("1. Create a new project\n");
+    printf("2. Open an existing project\n");
+    printf("3. Exit\n");
+    choice = getch();
+    switch (choice) {
+        case '1':
+            system(CLEAR_SCREEN);
+            printf("Enter the name of the project: ");
+            char name[100];
+            scanf("%s", name);
+            createProject(name);
+            break;
+        case '2':
+            // to be implemented
+            main();
+            break;
+        case '3':
+            printf("Exiting...\n");
+            return 2;
+            break;
+    }
+    return 0;
+}
 
 // a function that checks if the projectList exists and creates it if it doesn't
 int checkProjectList() {
@@ -123,8 +163,51 @@ int createProject(char name[]) {
 
     // Close the projectList file
     fclose(projectListWrite);
-    printf("Directory created successfully\n");
+    printf("Project successfully created\n");
     
     return 0;
 }
 
+// Function to disable canonical mode and echo for stdin
+void disable_input_buffering(struct termios* old_tio) {
+    struct termios new_tio;
+
+    // Get current terminal attributes and save them in old_tio
+    tcgetattr(STDIN_FILENO, old_tio);
+    
+    // Copy the current attributes to modify them
+    new_tio = *old_tio;
+    
+    // Disable canonical mode (ICANON) and echoing (ECHO)
+    new_tio.c_lflag &= ~(ICANON | ECHO);
+    
+    // Apply the modified attributes immediately
+    tcsetattr(STDIN_FILENO, TCSANOW, &new_tio);
+}
+
+// Function to restore the original terminal attributes
+void restore_input_buffering(struct termios* old_tio) {
+    // Restore the original terminal attributes
+    tcsetattr(STDIN_FILENO, TCSANOW, old_tio);
+}
+
+// Function to detect key input, including arrow keys
+int getch() {
+    struct termios old_tio;
+    disable_input_buffering(&old_tio);  // Disable canonical mode and echo
+
+    int ch = getchar();  // Read one character
+
+    if (ch == '\033') {  // Escape character for arrow keys
+        getchar();       // Skip the '[' character
+        switch (getchar()) {
+            case 'A': ch = 1; break;  // Up arrow
+            case 'B': ch = 2; break;  // Down arrow
+            case 'C': ch = 3; break;  // Right arrow
+            case 'D': ch = 4; break;  // Left arrow
+        }
+    }
+
+    restore_input_buffering(&old_tio);  // Restore original settings
+    return ch;
+}
