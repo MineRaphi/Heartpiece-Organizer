@@ -2,11 +2,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <termios.h>
+
 // Include the appropriate header file for the operating system
 #ifdef _WIN32
 #include <direct.h>
 #include <windows.h>
+#include <conio.h>
 #define MKDIR(path) _mkdir(path)
 #define RMDIR(path) RemoveDirectory(path)
 #define CLEAR_SCREEN "cls"
@@ -15,6 +16,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <termios.h>
 #define MKDIR(path) mkdir(path, 0755)
 #define RMDIR(path) rmdir(path)
 #define CLEAR_SCREEN "clear"
@@ -24,8 +26,13 @@ int menu();
 int checkProjectList();
 char** readProjectList(int *projectCount);
 int createProject(char name[]);
+#ifdef _WIN32
+void disable_input_buffering() {}
+void restore_input_buffering() {}
+#else
 void disable_input_buffering(struct termios* old_tio);
 void restore_input_buffering(struct termios* old_tio);
+#endif
 int getch();
 void selectProject();
 void openProject(char name[], int x, int y);
