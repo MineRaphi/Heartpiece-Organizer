@@ -28,13 +28,16 @@ void disable_input_buffering(struct termios* old_tio);
 void restore_input_buffering(struct termios* old_tio);
 int getch();
 void selectProject();
-void openProject(char name[]);
+void openProject(char name[], int x, int y);
 char** readSceneList(int *sceneCount, char projectName[]);
 void remove_prefix(char *original_string, const char *prefix);
 void gotoxy(int x, int y);
 void readSceneStatus(char sceneName[], char projectName[], int sceneStatus[]);
 void createNewScene(char sceneName[], char projectName[]);
+void deleteDirectoryContents(const char *dirPath);
 void deleteProject(char name[]);
+void deleteScene(char sceneName[], char projectName[]);
+void editScene(char sceneName[], char projectName[], int x, int y);
 
 int main() {
     // DO NOT REMOVE OR MODIFY THE FOLLOWING IF STATEMENT
@@ -77,6 +80,7 @@ int menu() {
             printf("Enter the name of the project: ");
             scanf("%s", name);
             createProject(name);
+            menu();
             break;
         case '2':
             selectProject();
@@ -93,6 +97,7 @@ int menu() {
             else {
                 printf("Cancelling...\n");
             }
+            menu();
             break;
         case '4':
             printf("Exiting...\n");
@@ -240,14 +245,16 @@ int getch() {
     int ch = getchar();  // Read one character
 
     if (ch == '\033') {  // Escape character for arrow keys
-        getchar();       // Skip the '[' character
-        switch (getchar()) {
-            case 'A': ch = 1; break;  // Up arrow
-            case 'B': ch = 2; break;  // Down arrow
-            case 'C': ch = 3; break;  // Right arrow
-            case 'D': ch = 4; break;  // Left arrow
+        if (getchar() == '[') {  // Skip the '[' character
+            switch (getchar()) {
+                case 'A': ch = 1; break;  // Up arrow
+                case 'B': ch = 2; break;  // Down arrow
+                case 'C': ch = 3; break;  // Right arrow
+                case 'D': ch = 4; break;  // Left arrow
+            }
         }
     }
+
 
     restore_input_buffering(&old_tio);  // Restore original settings
     return ch;
@@ -263,11 +270,11 @@ void selectProject() {
     }
     char input = getch();
     printf("%s", projectNames[input - '0' -1]);
-    openProject(projectNames[input - '0' -1]);
+    openProject(projectNames[input - '0' -1], 1, 1);
 }
 
 // a function that prints the project details and allows the user to edit the project
-void openProject(char name[]) {
+void openProject(char name[], int x, int y) {
     char path[110] = "./projects/";
     strcat(path, name);
 
@@ -330,23 +337,79 @@ void openProject(char name[]) {
             printf("-");
         }
     }
-    printf("\n");
+    if (sceneCount == 0) {
+        gotoxy(1, 3);
+        printf("No scenes found, press w to create one\n");
+    }
+    else {
+        gotoxy(sideBarWidth+x*5-4, 2+y*2-1);
+        printf(":");
+        gotoxy(sideBarWidth+x*5-4+3, 2+y*2-1);
+        printf(":");
+        gotoxy(1, sceneCount*2 + 3);
+    }
+
+    // input for what to do next
     char input = getch();
     char newSceneName[100];
+    char confirm[10];
     switch (input) {
         case 'w':
             printf("Name for new scene: ");
             scanf("%s", newSceneName);
             createNewScene(newSceneName, name);
+            return;
         case 'q':
         case 'e':
             menu();
+            return;
             break;
+        case 'd':
         case 'r':
-            // remove project
-            // to be implemented
+            printf("Enter the name of the scene to delete: ");
+            scanf("%s", newSceneName);
+            printf("Are you sure you want to delete the scene %s? (y/n): ", newSceneName);
+            scanf("%s", confirm);
+            if (confirm[0] == 'y' || confirm[0] == 'Y') {
+                deleteScene(newSceneName, name);
+                getch();
+            }
+            else {
+                printf("Cancelling...\n");
+            }
+            return;
+            break;
+        case 1:
+            y--;
+            break;
+        case 2:
+            y++;
+            break;
+        case 3:
+            x++;
+            break;
+        case 4:
+            x--;
+            break;
+        case ' ':
+            editScene(sceneNames[y-1], name, x-1, y-1);
+            return;
             break;
     }
+    if (x<1) {
+        x = 1;
+    }
+    else if (x>11) {
+        x = 11;
+    }
+    if (y<1) {
+        y = 1;
+    }
+    else if (y>sceneCount) {
+        y = sceneCount;
+    }
+    openProject(name, x, y);
+    return;
 }
 
 // a function that removes a prefix from a string
@@ -460,7 +523,7 @@ void createNewScene(char sceneName[], char projectName[]) {
     }
     fprintf(sceneListWrite, "%s\n", sceneName);
     fclose(sceneListWrite);
-    openProject(projectName);
+    openProject(projectName, 1, 1);
 }
 
 // a function that deletes the contents of a directory
@@ -524,4 +587,68 @@ void deleteProject(char name[]) {
     getch();
     getch();
     menu();
+}
+
+// a function that deletes a scene
+void deleteScene(char sceneName[], char projectName[]) {
+    char path[310] = "./projects/";
+    strcat(path, projectName);
+    strcat(path, "/");
+    strcat(path, sceneName);
+    strcat(path, ".hpo");
+    remove(path);
+    FILE *sceneListRead;
+    char sceneListPath[210] = "./projects/";
+    strcat(sceneListPath, projectName);
+    strcat(sceneListPath, "/sceneList.hpo");
+    sceneListRead = fopen(sceneListPath, "r");
+    int sceneCount = 0;
+    fscanf(sceneListRead, "%d", &sceneCount);
+    char scenes[sceneCount][200];
+    for (int i = 0; i < sceneCount; i++) {
+        fscanf(sceneListRead, "%s", scenes[i]);
+    }
+    fclose(sceneListRead);
+    FILE *sceneListWrite;
+    sceneListWrite = fopen(sceneListPath, "w");
+    fprintf(sceneListWrite, "%d\n", sceneCount-1);
+    for (int i = 0; i < sceneCount; i++) {
+        if (strcmp(scenes[i], sceneName) != 0) {
+            fprintf(sceneListWrite, "%s\n", scenes[i]);
+        }
+    }
+    fclose(sceneListWrite);
+    printf("Scene successfully deleted\n");
+    getch();
+    openProject(projectName, 1, 1);
+}
+
+// a function that edits a scene
+void editScene(char sceneName[], char projectName[], int x, int y) {
+    char path[310] = "./projects/";
+    strcat(path, projectName);
+    strcat(path, "/");
+    strcat(path, sceneName);
+    strcat(path, ".hpo");
+    FILE *sceneFileRead;
+    sceneFileRead = fopen(path, "r");
+    int sceneStatus[11];
+    for (int i = 0; i < 11; i++) {
+        fscanf(sceneFileRead, "%d", &sceneStatus[i]);
+    }
+    fclose(sceneFileRead);
+
+    FILE *sceneFileWrite;
+    sceneFileWrite = fopen(path, "w");
+    for (int i = 0; i < 11; i++) {
+        if (i == x) {
+            fprintf(sceneFileWrite, "%d\n", (sceneStatus[i] + 1) % 3);
+        }
+        else {
+            fprintf(sceneFileWrite, "%d\n", sceneStatus[i]);
+        }
+    }
+    fclose(sceneFileWrite);
+    openProject(projectName, x+1, y+1);
+    return;
 }
