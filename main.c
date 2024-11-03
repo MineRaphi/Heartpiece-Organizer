@@ -58,8 +58,10 @@ int main() {
         return 1;
     }
 
-    if (menu() == 2) {
-        return 0;
+    while (1) {
+        if (menu() == 2) {
+            return 0;
+        }
     }
 
     return 0;
@@ -224,7 +226,8 @@ int createProject(char name[]) {
     return 0;
 }
 
-#ifdef __unix__
+#ifdef _WIN32
+#else
 // Function to disable canonical mode and echo for stdin
 void disable_input_buffering(struct termios* old_tio) {
     struct termios new_tio;
@@ -281,6 +284,12 @@ void selectProject() {
     system(CLEAR_SCREEN);
     int length = 0;
     char** projectNames = readProjectList(&length);
+    if (length == 0) {
+        printf("No projects found\n");
+        getch();
+        menu();
+        return;
+    }
     for (int i=0; i<length; i++) {
         printf("%d. %s\n", i+1, projectNames[i]);
     }
@@ -363,6 +372,8 @@ void openProject(char name[], int x, int y) {
         gotoxy(sideBarWidth+x*5-4+3, 2+y*2-1);
         printf(":");
         gotoxy(1, sceneCount*2 + 3);
+        printf("w: Create new scene | e: Exit | r: Delete scene\n");
+        printf("Use the arrow keys to navigate and space to change the scene status\n\n");
     }
 
     // input for what to do next
