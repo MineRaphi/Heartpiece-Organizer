@@ -9,7 +9,7 @@
 #include <windows.h>
 #include <conio.h>
 #define MKDIR(path) _mkdir(path)
-#define RMDIR(path) RemoveDirectory(path)
+#define RMDIR(path) _rmdir(path)
 #define CLEAR_SCREEN "cls"
 #else
 #include <sys/stat.h>
@@ -26,6 +26,8 @@ int menu();
 int checkProjectList();
 char** readProjectList(int *projectCount);
 int createProject(char name[]);
+
+// Platform-specific input buffer handling
 #ifdef _WIN32
 void disable_input_buffering() {}
 void restore_input_buffering() {}
@@ -33,6 +35,7 @@ void restore_input_buffering() {}
 void disable_input_buffering(struct termios* old_tio);
 void restore_input_buffering(struct termios* old_tio);
 #endif
+
 int getch();
 void selectProject();
 void openProject(char name[], int x, int y);
@@ -246,6 +249,9 @@ void restore_input_buffering(struct termios* old_tio) {
 
 // Function to detect key input, including arrow keys
 int getch() {
+    #ifdef _WIN32
+    return _getch();
+    #else
     struct termios old_tio;
     disable_input_buffering(&old_tio);  // Disable canonical mode and echo
 
@@ -265,6 +271,7 @@ int getch() {
 
     restore_input_buffering(&old_tio);  // Restore original settings
     return ch;
+    #endif
 }
 
 // a function that allows the user to select a project which they want to open
@@ -535,33 +542,48 @@ void createNewScene(char sceneName[], char projectName[]) {
 
 // a function that deletes the contents of a directory
 void deleteDirectoryContents(const char *dirPath) {
-    struct dirent *entry;
-    DIR *dir = opendir(dirPath);
+#ifdef _WIN32
+    WIN32_FIND_DATA fileData;
+    HANDLE hFind;
+    char path[MAX_PATH];
+    snprintf(path, MAX_PATH, "%s\\*", dirPath);
+    hFind = FindFirstFile(path, &fileData);
+    if (hFind == INVALID_HANDLE_VALUE) return;
 
-    if (dir == NULL) {
-        perror("Error opening directory");
-        return;
-    }
-
-    char filePath[512];
-    struct stat statbuf;
-    while ((entry = readdir(dir)) != NULL) {
-        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
-            continue;
+    do {
+        snprintf(path, MAX_PATH, "%s\\%s", dirPath, fileData.cFileName);
+        if (fileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            if (strcmp(fileData.cFileName, ".") != 0 && strcmp(fileData.cFileName, "..") != 0) {
+                deleteDirectoryContents(path);
+                RemoveDirectory(path);
+            }
+        } else {
+            DeleteFile(path);
         }
+    } while (FindNextFile(hFind, &fileData));
+    FindClose(hFind);
+#else
+    DIR *dir = opendir(dirPath);
+    struct dirent *entry;
+    struct stat statbuf;
+    char filePath[512];
+
+    if (!dir) return;
+
+    while ((entry = readdir(dir))) {
+        if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")) continue;
 
         snprintf(filePath, sizeof(filePath), "%s/%s", dirPath, entry->d_name);
 
         if (stat(filePath, &statbuf) == 0 && S_ISDIR(statbuf.st_mode)) {
             deleteDirectoryContents(filePath);
-        }
-
-        if (remove(filePath) != 0) {
-            perror("Error deleting file or directory");
+            RMDIR(filePath);
+        } else {
+            remove(filePath);
         }
     }
-
     closedir(dir);
+#endif
 }
 
 // a function that deletes a project
