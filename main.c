@@ -224,6 +224,7 @@ int createProject(char name[]) {
     return 0;
 }
 
+#ifdef __unix__
 // Function to disable canonical mode and echo for stdin
 void disable_input_buffering(struct termios* old_tio) {
     struct termios new_tio;
@@ -246,6 +247,7 @@ void restore_input_buffering(struct termios* old_tio) {
     // Restore the original terminal attributes
     tcsetattr(STDIN_FILENO, TCSANOW, old_tio);
 }
+#endif
 
 // Function to detect key input, including arrow keys
 int getch() {
@@ -546,21 +548,35 @@ void deleteDirectoryContents(const char *dirPath) {
     WIN32_FIND_DATA fileData;
     HANDLE hFind;
     char path[MAX_PATH];
+
+    // Prepare the path pattern
     snprintf(path, MAX_PATH, "%s\\*", dirPath);
+
     hFind = FindFirstFile(path, &fileData);
-    if (hFind == INVALID_HANDLE_VALUE) return;
+    if (hFind == INVALID_HANDLE_VALUE) {
+        return;
+    }
 
     do {
+        // Skip the "." and ".." directories
+        if (strcmp(fileData.cFileName, ".") == 0 || strcmp(fileData.cFileName, "..") == 0) {
+            continue;
+        }
+
+        // Construct the full path
         snprintf(path, MAX_PATH, "%s\\%s", dirPath, fileData.cFileName);
+
         if (fileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-            if (strcmp(fileData.cFileName, ".") != 0 && strcmp(fileData.cFileName, "..") != 0) {
-                deleteDirectoryContents(path);
-                RemoveDirectory(path);
-            }
+            // If it's a directory, call recursively
+            deleteDirectoryContents(path);
+            RemoveDirectory(path);
         } else {
+            // If it's a file, delete it
             DeleteFile(path);
         }
-    } while (FindNextFile(hFind, &fileData));
+
+    } while (FindNextFile(hFind, &fileData) != 0);
+
     FindClose(hFind);
 #else
     DIR *dir = opendir(dirPath);
@@ -570,21 +586,25 @@ void deleteDirectoryContents(const char *dirPath) {
 
     if (!dir) return;
 
-    while ((entry = readdir(dir))) {
-        if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")) continue;
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
 
         snprintf(filePath, sizeof(filePath), "%s/%s", dirPath, entry->d_name);
 
         if (stat(filePath, &statbuf) == 0 && S_ISDIR(statbuf.st_mode)) {
-            deleteDirectoryContents(filePath);
-            RMDIR(filePath);
+            deleteDirectoryContents(filePath);  // Recursive call
+            rmdir(filePath);
         } else {
-            remove(filePath);
+            unlink(filePath);  // Remove file
         }
     }
+
     closedir(dir);
 #endif
 }
+
 
 // a function that deletes a project
 void deleteProject(char name[]) {
