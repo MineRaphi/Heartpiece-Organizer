@@ -255,7 +255,18 @@ void restore_input_buffering(struct termios* old_tio) {
 // Function to detect key input, including arrow keys
 int getch() {
     #ifdef _WIN32
-    return _getch();
+    int ch = _getch();
+
+    if (ch == 0 || ch == 224) {
+        ch = _getch();
+        switch(ch) {
+            case 72: return 1;  // Up arrow
+            case 80: return 2;  // Down arrow
+            case 77: return 3;  // Right arrow
+            case 75: return 4;  // Left arrow
+        }
+    }
+
     #else
     struct termios old_tio;
     disable_input_buffering(&old_tio);  // Disable canonical mode and echo
@@ -344,16 +355,15 @@ void openProject(char name[], int x, int y) {
             printf("| ");
             switch (sceneStatus[j]) {
                 case 0:
-                    printf("\033[0;31m██");
+                    printf("\033[0;31m%c%c", 219, 219);
                     break;
                 case 1:
-                    printf("\033[0;33m██");
+                    printf("\033[0;33m%c%c", 219, 219);
                     break;
                 case 2:
-                    printf("\033[0;32m██");
+                    printf("\033[0;32m%c%c", 219, 219);
                     break;
             }
-            //printf("██");
             printf("\033[0m");
         }
 
@@ -406,6 +416,7 @@ void openProject(char name[], int x, int y) {
             }
             return;
             break;
+
         case 1:
             y--;
             break;
