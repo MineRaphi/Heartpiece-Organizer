@@ -354,6 +354,7 @@ void openProject(char name[], int x, int y) {
             gotoxy(sideBarWidth + j*5, 3 + i);
             printf("| ");
             switch (sceneStatus[j]) {
+#ifdef _WIN32
                 case 0:
                     printf("\033[0;31m%c%c", 219, 219);
                     break;
@@ -363,6 +364,17 @@ void openProject(char name[], int x, int y) {
                 case 2:
                     printf("\033[0;32m%c%c", 219, 219);
                     break;
+#else
+                case 0:
+                    printf("\033[0;31m██");
+                    break;
+                case 1:
+                    printf("\033[0;33m██");
+                    break;
+                case 2:
+                    printf("\033[0;32m██");
+                    break;
+#endif
             }
             printf("\033[0m");
         }
