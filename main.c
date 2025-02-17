@@ -22,11 +22,6 @@
 #define CLEAR_SCREEN "clear"
 #endif
 
-int menu();
-int checkProjectList();
-char** readProjectList(int *projectCount);
-int createProject(char name[]);
-
 // Platform-specific input buffer handling
 #ifdef _WIN32
 void disable_input_buffering() {}
@@ -36,24 +31,25 @@ void disable_input_buffering(struct termios* old_tio);
 void restore_input_buffering(struct termios* old_tio);
 #endif
 
+
+int menu();
+int checkProjectList();
 int getch();
-void selectProject();
-void openProject(char name[], int x, int y);
-char** readSceneList(int *sceneCount, char projectName[]);
-void remove_prefix(char *original_string, const char *prefix);
 void gotoxy(int x, int y);
-void readSceneStatus(char sceneName[], char projectName[], int sceneStatus[]);
-void createNewScene(char sceneName[], char projectName[]);
-void deleteDirectoryContents(const char *dirPath);
-void deleteProject(char name[]);
-void deleteScene(char sceneName[], char projectName[]);
-void editScene(char sceneName[], char projectName[], int x, int y);
+char** readProjectList(int *projectCount);
+int createProject(char name[]);
+void openProject(char name[], int x, int y);
+void deleteProject();                   // to be implemented
+void deleteProjectFiles(char name[]);   // to be implemented
+void readSceneStatus(char sceneName[], char projectName[], int sceneStatus[][11]);
+void editScene(char *sceneName, char *projectName, int x, int y, int yOffset);
 
 int main() {
     // DO NOT REMOVE OR MODIFY THE FOLLOWING IF STATEMENT
     if (checkProjectList() == 1) {
         printf("Project list created\n");
         printf("Start again to use the program\n");
+        printf("Press any key to exit\n");
         getch();
         return 1;
     }
@@ -85,144 +81,38 @@ int menu() {
     printf("3. Delete a project\n");
     printf("4. Exit\n");
     choice = getch();
-    char name[500];
-    switch (choice) {
+    switch(choice) {
         case '1':
             system(CLEAR_SCREEN);
             printf("Enter the name of the project: ");
+            char name[100];
             scanf("%s", name);
             createProject(name);
             menu();
             break;
         case '2':
-            selectProject();
-            break;
-        case '3':
-            printf("Enter the name of the project to delete: ");
-            scanf("%s", name);
-            printf("Are you sure you want to delete the project %s? (y/n): ", name);
-            char confirm[10]; 
-            scanf("%s", confirm);
-            if (confirm[0] == 'y' || confirm[0] == 'Y') {
-                deleteProject(name);
+            system(CLEAR_SCREEN);
+
+            int projectCount;
+            FILE *projectListRead;
+            projectListRead = fopen("./projects/projectList.hpo", "r");
+            fscanf(projectListRead, "%d", &projectCount);
+            char **projectNames = readProjectList(&projectCount);
+            fclose(projectListRead);
+        
+            for(int i=0; i<projectCount; i++) {
+                printf("%d. %s\n", i+1, projectNames[i]);
             }
-            else {
-                printf("Cancelling...\n");
+            int input = getch() - '0';
+        
+            if (input > projectCount) {
+                return 1;
             }
-            menu();
-            break;
-        case '4':
-            printf("Exiting...\n");
+            openProject(projectNames[input-1], 1 ,1);
             return 2;
-            break;
+        case '4':
+            return 2;
     }
-    return 0;
-}
-
-// a function that checks if the projectList exists and creates it if it doesn't
-int checkProjectList() {
-    FILE *projectList;
-
-    // Open the projectList in read mode
-    projectList = fopen("./projects/projectList.hpo", "r");
-
-    if (projectList == NULL) {
-        fclose(projectList);
-        projectList = fopen("./projects/projectList.hpo", "w");
-        fprintf(projectList, "0\n");
-        return 1;
-    }
-    else {
-        fclose(projectList);
-        return 0;
-    }
-}
-
-// a function that reads the project list and returns an array of project names
-char** readProjectList(int *projectCount) {
-    FILE *projectListRead;
-    char **projectNames;
-
-    // Open the projectList in read mode
-    projectListRead = fopen("./projects/projectList.hpo", "r");
-    if (projectListRead == NULL) {
-        perror("Error opening project list file");
-        return NULL;
-    }
-
-    // Read the number of projects in the projectList
-    fscanf(projectListRead, "%d", projectCount);
-
-    // Allocate memory for the array of project names
-    projectNames = (char **)malloc(*projectCount * sizeof(char *));
-    for (int i = 0; i < *projectCount; i++) {
-        projectNames[i] = (char *)malloc(100 * sizeof(char));
-    }
-
-    // Read the names of the projects in the projectList
-    for (int i = 0; i < *projectCount; i++) {
-        fscanf(projectListRead, "%s", projectNames[i]);
-    }
-
-    // Close the projectList file
-    fclose(projectListRead);
-
-    return projectNames;
-}
-
-// a function that creates a new project directory
-int createProject(char name[]) {
-    FILE *projectListWrite;
-    int projectCount = 0;
-    char projectName[110] = "./projects/";
-    // append the name of the project to the path
-    strcat(projectName, name);
-
-    const char *dirName = projectName;
-    
-    // Create a directory with read, write, and execute permissions for the owner
-    if (MKDIR(dirName) == -1) {
-        perror("Error creating directory");
-        return 1;
-    }
-
-    // Use readProjectList to get the current list of projects
-    char **projectNames = readProjectList(&projectCount);
-    if (projectNames == NULL) {
-        return 1;
-    }
-
-    // Open the projectList in write mode
-    projectListWrite = fopen("./projects/projectList.hpo", "w");
-    if (projectListWrite == NULL) {
-        perror("Error opening project list file for writing");
-        return 1;
-    }
-
-    // Append the name of the new project to the projectList
-    projectCount++;
-    fprintf(projectListWrite, "%d\n", projectCount);
-    for (int i = 0; i < projectCount - 1; i++) {
-        fprintf(projectListWrite, "%s\n", projectNames[i]);
-        free(projectNames[i]); // Free the allocated memory for each project name
-    }
-    fprintf(projectListWrite, "%s\n", name);
-    free(projectNames); // Free the allocated memory for the project names array
-
-    // Close the projectList file
-    fclose(projectListWrite);
-
-    FILE *sceneListWrite;
-    char scenePath[210] = "./projects/";
-    strcat(scenePath, name);
-    strcat(scenePath, "/sceneList.hpo");
-
-    // Open the sceneList in write mode
-    sceneListWrite = fopen(scenePath, "w");
-    fprintf(sceneListWrite, "0\n");
-
-    printf("Project successfully created\n");
-    
     return 0;
 }
 
@@ -290,124 +180,253 @@ int getch() {
     #endif
 }
 
-// a function that allows the user to select a project which they want to open
-void selectProject() {
-    system(CLEAR_SCREEN);
-    int length = 0;
-    char** projectNames = readProjectList(&length);
-    if (length == 0) {
-        printf("No projects found\n");
-        getch();
-        menu();
-        return;
-    }
-    for (int i=0; i<length; i++) {
-        printf("%d. %s\n", i+1, projectNames[i]);
-    }
-    char input = getch();
-    printf("%s", projectNames[input - '0' -1]);
-    openProject(projectNames[input - '0' -1], 1, 1);
+// a function that moves the cursor to a specific position on the terminal
+void gotoxy(int x, int y) {
+    // ANSI escape code for moving the cursor
+    printf("\033[%d;%dH", y, x);
 }
 
-// a function that prints the project details and allows the user to edit the project
+// a function that checks if the projectList exists and creates it if it doesn't
+int checkProjectList() {
+    FILE *projectList;
+    DIR *dir = opendir("./projects");
+    if (dir) {
+        closedir(dir);
+    }
+    else {
+        MKDIR("./projects");
+    }
+    // Open the projectList in read mode
+    projectList = fopen("./projects/projectList.hpo", "r");
+
+    if (projectList == NULL) {
+        fclose(projectList);
+        projectList = fopen("./projects/projectList.hpo", "w");
+        fprintf(projectList, "0\n");
+        return 1;
+    }
+    else {
+        fclose(projectList);
+        return 0;
+    }
+}
+
+// a function that reads the project list and returns an array of project names
+char** readProjectList(int *projectCount) {
+    FILE *projectListRead;
+    char **projectNames;
+
+    // Open the projectList in read mode
+    projectListRead = fopen("./projects/projectList.hpo", "r");
+    if (projectListRead == NULL) {
+        perror("Error opening project list file");
+        return NULL;
+    }
+
+    // Read the number of projects in the projectList
+    fscanf(projectListRead, "%d", projectCount);
+
+    // Allocate memory for the array of project names
+    projectNames = (char **)malloc(*projectCount * sizeof(char *));
+    for (int i = 0; i < *projectCount; i++) {
+        projectNames[i] = (char *)malloc(100 * sizeof(char));
+    }
+
+    // Read the names of the projects in the projectList
+    for (int i = 0; i < *projectCount; i++) {
+        fscanf(projectListRead, "%s", projectNames[i]);
+    }
+
+    // Close the projectList file
+    fclose(projectListRead);
+
+    return projectNames;
+}
+
+// a function that creates a new project
+int createProject(char name[]) {
+    char path[110] = "./projects/";
+    strcat(path, name);
+    MKDIR(path);
+
+    // Reads the project list
+    FILE* projectListRead;
+    projectListRead = fopen("./projects/projectList.hpo", "r");
+    int projectCount = 0;
+    fscanf(projectListRead, "%d", &projectCount);
+    char projects[projectCount][200];
+    for (int i = 0; i < projectCount; i++) {
+        fscanf(projectListRead, "%s", projects[i]);
+    }
+    fclose(projectListRead);
+
+    // Writes the old information with the new project into the project list
+    FILE* projectListWrite;
+    projectListWrite = fopen("./projects/projectList.hpo", "w");
+    fprintf(projectListWrite, "%d\n", projectCount+1);
+    for (int i = 0; i < projectCount; i++) {
+        fprintf(projectListWrite, "%s\n", projects[i]);
+    }
+    fprintf(projectListWrite, "%s\n", name);
+    fclose(projectListWrite);
+    
+    // Generates the scene list file
+    FILE* sceneListWrite;
+    char scenePath[210] = "./projects/";
+    strcat(scenePath, name);
+    strcat(scenePath, "/sceneList.hpo");
+    sceneListWrite = fopen(scenePath, "w");
+    fprintf(sceneListWrite, "0\n");
+
+    return 0;
+
+}
+
+// a function that opens a project
 void openProject(char name[], int x, int y) {
+    int sceneCount;
+    FILE *sceneListRead;
+
     char path[110] = "./projects/";
     strcat(path, name);
 
-    int sceneCount = 0;
-    
-    char** sceneNames = readSceneList(&sceneCount, name);
+    sceneListRead = fopen(strcat(path, "/sceneList.hpo"), "r");
+    fscanf(sceneListRead, "%d", &sceneCount);
 
-    int sideBarWidth = 0;
+    char **sceneNames;
+    sceneNames = (char **)malloc(sceneCount * sizeof(char *));
     for (int i = 0; i < sceneCount; i++) {
-        if (strlen(sceneNames[i]) > sideBarWidth) {
-            sideBarWidth = strlen(sceneNames[i]);
+        sceneNames[i] = (char *)malloc(100 * sizeof(char));
+    }
+
+    for (int i = 0; i < sceneCount; i++) {
+        fscanf(sceneListRead, "%s", sceneNames[i]);
+    }
+    fclose(sceneListRead);
+
+    int maxNameLength = 0;
+    for (int i = 0; i < sceneCount; i++) {
+        if (strlen(sceneNames[i]) > maxNameLength) {
+            maxNameLength = strlen(sceneNames[i]);
         }
     }
-    if (strlen(name) > sideBarWidth) {
-        sideBarWidth = strlen(name);
+    if (strlen(name) > maxNameLength) {
+        maxNameLength = strlen(name);
     }
-    sideBarWidth += 2;
-    
-    system(CLEAR_SCREEN);
 
+    int sceneCuts[sceneCount];
+    for (int i = 0; i < sceneCount; i++) {
+        FILE* sceneFile;
+        char scenePath[310] = "./projects/";
+        strcat(scenePath, name);
+        strcat(scenePath, "/");
+        strcat(scenePath, sceneNames[i]);
+        strcat(scenePath, ".hpo");
+        sceneFile = fopen(scenePath, "r");
+        fscanf(sceneFile, "%d", &sceneCuts[i]);
+        fclose(sceneFile);
+    }
+
+    int cutCount = 0;
+    for(int i=0; i<sceneCount; i++) {
+        cutCount += sceneCuts[i];
+    }
+
+    maxNameLength+=2;
+
+    // Displayes everything on the screen
     gotoxy(1, 1);
     printf("%s", name);
-    gotoxy(sideBarWidth, 1);
-    printf("| Sc | Sb | Vo | La | RA | TA | CA | Bg | Cp | Mu | Db ");
+    gotoxy(maxNameLength, 1);
+    printf("| C || Sc | Sb | Vo | La | RA | TA | CA | Bg | Cp | Mu | Db ");
     gotoxy(1, 2);
-    for (int i = 0; i < sideBarWidth + 54; i++) {
+    for (int i = 0; i < maxNameLength + 59; i++) {
         printf("-");
-    }
-    for (int i = 0; i < sceneCount*2; i+=2) {
-        gotoxy(1, 3 + i);
-        printf("%s", sceneNames[i/2]);
-
-        int sceneStatus[11];
-        for (int j = 0; j<11; j++) {
-            sceneStatus[j] = 2;
-        }
-        
-        readSceneStatus(sceneNames[i/2], name, sceneStatus);
-
-        for (int j = 0; j<11; j++) {
-            gotoxy(sideBarWidth + j*5, 3 + i);
-            printf("| ");
-            switch (sceneStatus[j]) {
-#ifdef _WIN32
-                case 0:
-                    printf("\033[0;31m%c%c", 219, 219);
-                    break;
-                case 1:
-                    printf("\033[0;33m%c%c", 219, 219);
-                    break;
-                case 2:
-                    printf("\033[0;32m%c%c", 219, 219);
-                    break;
-#else
-                case 0:
-                    printf("\033[0;31m██");
-                    break;
-                case 1:
-                    printf("\033[0;33m██");
-                    break;
-                case 2:
-                    printf("\033[0;32m██");
-                    break;
-#endif
-            }
-            printf("\033[0m");
-        }
-
-        gotoxy(1, 4 + i);
-        for (int j = 0; j < sideBarWidth + 54; j++) {
-            printf("-");
-        }
     }
     if (sceneCount == 0) {
         gotoxy(1, 3);
-        printf("No scenes found, press w to create one\n");
+        printf("No scenes found press w to create a new scene or e to go back");
+        int input = getch();
+        // to be implemented
     }
     else {
-        gotoxy(sideBarWidth+x*5-4, 2+y*2-1);
-        printf(":");
-        gotoxy(sideBarWidth+x*5-4+3, 2+y*2-1);
-        printf(":");
-        gotoxy(1, sceneCount*2 + 3);
-        printf("w: Create new scene | e: Exit | r: Delete scene\n");
-        printf("Use the arrow keys to navigate and space to change the scene status\n\n");
-    }
+        int line=3;
+        for(int i=0; i<sceneCount; i++) {
+            gotoxy(0, line-1);
+            for(int j=0; j<maxNameLength; j++) {
+                printf("-");
+            }
+            gotoxy(0, line);
+            printf("%s", sceneNames[i]);
+            for(int j=0; j<sceneCuts[i]; j++) {
+                gotoxy(maxNameLength, line);
+                printf("| %d ||\n", j+1);
+                line++;
+                gotoxy(maxNameLength, line);
+                printf("|-----------------------------------------------------------");
+                line++;
+            }
+        }
+        gotoxy(0, line-1);
+        for(int i=0; i<maxNameLength+59; i++) {
+            printf(" ");
+        }
+        line = 3;
 
-    // input for what to do next
-    char input = getch();
+        
+        for(int i=0; i<sceneCount; i++) {
+            int sceneStatus[sceneCuts[i]][11];
+            readSceneStatus(sceneNames[i], name, sceneStatus);
+            for(int j=0; j<sceneCuts[i]; j++) {
+                for(int k=0; k<11; k++) {
+                    gotoxy(maxNameLength + k*5 + 5, line);
+                    switch (sceneStatus[j][k]) {
+#ifdef _WIN32
+                        case 0:
+                            printf("| \033[0;31m%c%c ", 219, 219);
+                            break;
+                        case 1:
+                            printf("| \033[0;33m%c%c ", 219, 219);
+                            break;
+                        case 2:
+                            printf("| \033[0;32m%c%c ", 219, 219);
+                            break;
+#else
+                        case 0:
+                            printf("| \033[0;31m██ ");
+                            break;
+                        case 1:
+                            printf("| \033[0;33m██ ");
+                            break;
+                        case 2:
+                            printf("| \033[0;32m██ ");
+                            break;
+#endif
+                    }
+                    printf("\033[0m");
+                }
+                line+=2;
+            }
+        }
+        gotoxy(1, line-1);
+        for(int i=0; i<maxNameLength+59; i++) {
+            printf("-");
+        }
+        gotoxy(maxNameLength+x*5+1, 2+y*2-1);
+        printf(":");
+        gotoxy(maxNameLength+x*5+1+3, 2+y*2-1);
+        printf(":");
+        gotoxy(1, cutCount*2 + 3);
+        printf("w: Create new scene | e: Exit | r: Delete scene | t: new cut\n");
+        printf("Use the arrow keys to navigate and space to edit a scene\n");
+        char input = getch();
     char newSceneName[100];
     char confirm[10];
+    int sceneIndex = 0;
+    int k = y;
     switch (input) {
         case 'w':
-            printf("Name for new scene: ");
-            scanf("%s", newSceneName);
-            createNewScene(newSceneName, name);
-            return;
+            break;
         case 'q':
         case 'e':
             menu();
@@ -415,18 +434,7 @@ void openProject(char name[], int x, int y) {
             break;
         case 'd':
         case 'r':
-            printf("Enter the name of the scene to delete: ");
-            scanf("%s", newSceneName);
-            printf("Are you sure you want to delete the scene %s? (y/n): ", newSceneName);
-            scanf("%s", confirm);
-            if (confirm[0] == 'y' || confirm[0] == 'Y') {
-                deleteScene(newSceneName, name);
-                getch();
-            }
-            else {
-                printf("Cancelling...\n");
-            }
-            return;
+            
             break;
 
         case 1:
@@ -442,9 +450,19 @@ void openProject(char name[], int x, int y) {
             x--;
             break;
         case ' ':
-            editScene(sceneNames[y-1], name, x-1, y-1);
+            for(int i=0; i<sceneCount; i++) {
+                if (sceneCuts[i] >= y) {
+                    sceneIndex = i;
+                    break;
+                }
+                else {
+                    y -= sceneCuts[i];
+                }
+            }
+            editScene(sceneNames[sceneIndex], name, x, y, k);
             return;
             break;
+        }
     }
     if (x<1) {
         x = 1;
@@ -455,67 +473,15 @@ void openProject(char name[], int x, int y) {
     if (y<1) {
         y = 1;
     }
-    else if (y>sceneCount) {
-        y = sceneCount;
+    else if (y>cutCount) {
+        y = cutCount;
     }
     openProject(name, x, y);
     return;
 }
 
-// a function that removes a prefix from a string
-void remove_prefix(char *original_string, const char *prefix) {
-    size_t prefix_len = strlen(prefix);
-    if (strncmp(original_string, prefix, prefix_len) == 0) {
-        // Move the pointer to skip the prefix
-        original_string += prefix_len;
-    }
-}
-
-// a function that reads the scene list and returns an array of scene names
-char** readSceneList(int *sceneCount, char sceneName[]) {
-    FILE *projectListRead;
-    char **projectNames;
-
-    char scenePath[210] = "./projects/";
-
-    strcat(scenePath, sceneName);
-    strcat(scenePath, "/sceneList.hpo");
-
-    // Open the projectList in read mode
-    projectListRead = fopen(scenePath, "r");
-    if (projectListRead == NULL) {
-        perror("Error opening project list file");
-        return NULL;
-    }
-
-    // Read the number of scenes in the sceneList
-    fscanf(projectListRead, "%d", sceneCount);
-
-    // Allocate memory for the array of scene names
-    projectNames = (char **)malloc(*sceneCount * sizeof(char *)* *sceneCount);
-    for (int i = 0; i < *sceneCount; i++) {
-        projectNames[i] = (char *)malloc(100 * sizeof(char));
-    }
-
-    // Read the names of the projects in the projectList
-    for (int i = 0; i < *sceneCount; i++) {
-        fscanf(projectListRead, "%s", projectNames[i]);
-    }
-
-    // Close the projectList file
-    fclose(projectListRead);
-
-    return projectNames;
-}
-
-// a function that moves the cursor to a specific position on the terminal
-void gotoxy(int x, int y) {
-    // ANSI escape code for moving the cursor
-    printf("\033[%d;%dH", y, x);
-}
-
 // a function that reads the scene status
-void readSceneStatus(char sceneName[], char projectName[], int sceneStatus[]) {
+void readSceneStatus(char sceneName[], char projectName[], int sceneStatus[][11]) {
     FILE *sceneFile;
     char scenePath[310] = "./projects/";
 
@@ -531,183 +497,22 @@ void readSceneStatus(char sceneName[], char projectName[], int sceneStatus[]) {
         return;
     }
 
+    int cuts;
+    fscanf(sceneFile, "%d", &cuts);
+    
     // Read the scene status
-    for (int i = 0; i < 11; i++) {
-        fscanf(sceneFile, "%d\n", &sceneStatus[i]);
+    for(int i=0; i<cuts; i++) {
+        for(int j=0; j<11; j++) {
+            fscanf(sceneFile, "%d", &sceneStatus[i][j]);
+        }
+        fscanf(sceneFile, "\n");
     }
 
-    // Close the scene file
     fclose(sceneFile);
-}
-
-// a function that creates a new scene
-void createNewScene(char sceneName[], char projectName[]) {
-    char path[310] = "./projects/";
-    strcat(path, projectName);
-    strcat(path, "/");
-    strcat(path, sceneName);
-    strcat(path, ".hpo");
-    FILE *sceneFile;
-    sceneFile = fopen(path, "w");
-    for (int i = 0; i < 11; i++) {
-        fprintf(sceneFile, "0\n");
-    }
-    fclose(sceneFile);
-    FILE *sceneListRead;
-    char sceneListPath[210] = "./projects/";
-    strcat(sceneListPath, projectName);
-    strcat(sceneListPath, "/sceneList.hpo");
-    sceneListRead = fopen(sceneListPath, "r");
-    int sceneCount = 0;
-    fscanf(sceneListRead, "%d", &sceneCount);
-    char scenes[sceneCount][200];
-    for (int i = 0; i < sceneCount; i++) {
-        fscanf(sceneListRead, "%s", scenes[i]);
-    }
-    fclose(sceneListRead);
-    FILE *sceneListWrite;
-    sceneListWrite = fopen(sceneListPath, "w");
-    fprintf(sceneListWrite, "%d\n", sceneCount+1);
-    for (int i = 0; i < sceneCount; i++) {
-        fprintf(sceneListWrite, "%s\n", scenes[i]);
-    }
-    fprintf(sceneListWrite, "%s\n", sceneName);
-    fclose(sceneListWrite);
-    openProject(projectName, 1, 1);
-}
-
-// a function that deletes the contents of a directory
-void deleteDirectoryContents(const char *dirPath) {
-#ifdef _WIN32
-    WIN32_FIND_DATA fileData;
-    HANDLE hFind;
-    char path[MAX_PATH];
-
-    // Prepare the path pattern
-    snprintf(path, MAX_PATH, "%s\\*", dirPath);
-
-    hFind = FindFirstFile(path, &fileData);
-    if (hFind == INVALID_HANDLE_VALUE) {
-        return;
-    }
-
-    do {
-        // Skip the "." and ".." directories
-        if (strcmp(fileData.cFileName, ".") == 0 || strcmp(fileData.cFileName, "..") == 0) {
-            continue;
-        }
-
-        // Construct the full path
-        snprintf(path, MAX_PATH, "%s\\%s", dirPath, fileData.cFileName);
-
-        if (fileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-            // If it's a directory, call recursively
-            deleteDirectoryContents(path);
-            RemoveDirectory(path);
-        } else {
-            // If it's a file, delete it
-            DeleteFile(path);
-        }
-
-    } while (FindNextFile(hFind, &fileData) != 0);
-
-    FindClose(hFind);
-#else
-    DIR *dir = opendir(dirPath);
-    struct dirent *entry;
-    struct stat statbuf;
-    char filePath[512];
-
-    if (!dir) return;
-
-    while ((entry = readdir(dir)) != NULL) {
-        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
-            continue;
-        }
-
-        snprintf(filePath, sizeof(filePath), "%s/%s", dirPath, entry->d_name);
-
-        if (stat(filePath, &statbuf) == 0 && S_ISDIR(statbuf.st_mode)) {
-            deleteDirectoryContents(filePath);  // Recursive call
-            rmdir(filePath);
-        } else {
-            unlink(filePath);  // Remove file
-        }
-    }
-
-    closedir(dir);
-#endif
-}
-
-
-// a function that deletes a project
-void deleteProject(char name[]) {
-    char path[110] = "./projects/";
-    strcat(path, name);
-    deleteDirectoryContents(path);
-    RMDIR(path);
-
-    FILE *projectListRead;
-    projectListRead = fopen("./projects/projectList.hpo", "r");
-    int projectCount = 0;
-    fscanf(projectListRead, "%d", &projectCount);
-    char projects[projectCount][200];
-    for (int i = 0; i < projectCount; i++) {
-        fscanf(projectListRead, "%s", projects[i]);
-    }
-    fclose(projectListRead);
-
-    FILE *projectListWrite;
-    projectListWrite = fopen("./projects/projectList.hpo", "w");
-    fprintf(projectListWrite, "%d\n", projectCount-1);
-    for (int i = 0; i < projectCount; i++) {
-        if (strcmp(projects[i], name) != 0) {
-            fprintf(projectListWrite, "%s\n", projects[i]);
-        }
-    }
-    fclose(projectListWrite);
-    printf("Project successfully deleted\n");
-    getch();
-    getch();
-    menu();
-}
-
-// a function that deletes a scene
-void deleteScene(char sceneName[], char projectName[]) {
-    char path[310] = "./projects/";
-    strcat(path, projectName);
-    strcat(path, "/");
-    strcat(path, sceneName);
-    strcat(path, ".hpo");
-    remove(path);
-    FILE *sceneListRead;
-    char sceneListPath[210] = "./projects/";
-    strcat(sceneListPath, projectName);
-    strcat(sceneListPath, "/sceneList.hpo");
-    sceneListRead = fopen(sceneListPath, "r");
-    int sceneCount = 0;
-    fscanf(sceneListRead, "%d", &sceneCount);
-    char scenes[sceneCount][200];
-    for (int i = 0; i < sceneCount; i++) {
-        fscanf(sceneListRead, "%s", scenes[i]);
-    }
-    fclose(sceneListRead);
-    FILE *sceneListWrite;
-    sceneListWrite = fopen(sceneListPath, "w");
-    fprintf(sceneListWrite, "%d\n", sceneCount-1);
-    for (int i = 0; i < sceneCount; i++) {
-        if (strcmp(scenes[i], sceneName) != 0) {
-            fprintf(sceneListWrite, "%s\n", scenes[i]);
-        }
-    }
-    fclose(sceneListWrite);
-    printf("Scene successfully deleted\n");
-    getch();
-    openProject(projectName, 1, 1);
 }
 
 // a function that edits a scene
-void editScene(char sceneName[], char projectName[], int x, int y) {
+void editScene(char *sceneName, char *projectName, int x, int yScene, int y) {
     char path[310] = "./projects/";
     strcat(path, projectName);
     strcat(path, "/");
@@ -715,23 +520,32 @@ void editScene(char sceneName[], char projectName[], int x, int y) {
     strcat(path, ".hpo");
     FILE *sceneFileRead;
     sceneFileRead = fopen(path, "r");
-    int sceneStatus[11];
-    for (int i = 0; i < 11; i++) {
-        fscanf(sceneFileRead, "%d", &sceneStatus[i]);
+    int cuts;
+    fscanf(sceneFileRead, "%d", &cuts);
+    int sceneStatus[cuts][11];
+    for (int i = 0; i < cuts; i++) {
+        for (int j = 0; j < 11; j++) {
+            fscanf(sceneFileRead, "%d ", &sceneStatus[i][j]);
+        }
+        fscanf(sceneFileRead, "\n");
     }
     fclose(sceneFileRead);
 
     FILE *sceneFileWrite;
     sceneFileWrite = fopen(path, "w");
-    for (int i = 0; i < 11; i++) {
-        if (i == x) {
-            fprintf(sceneFileWrite, "%d\n", (sceneStatus[i] + 1) % 3);
+    fprintf(sceneFileWrite, "%d\n", cuts);
+    for (int i=0; i<cuts; i++) {
+        for (int j=0; j<11; j++) {
+            if (i == yScene-1 && j == x-1) {
+                fprintf(sceneFileWrite, "%d ", (sceneStatus[i][j] + 1) % 3);
+            }
+            else {
+                fprintf(sceneFileWrite, "%d ", sceneStatus[i][j]);
+            }
         }
-        else {
-            fprintf(sceneFileWrite, "%d\n", sceneStatus[i]);
-        }
+        fprintf(sceneFileWrite, "\n");
     }
     fclose(sceneFileWrite);
-    openProject(projectName, x+1, y+1);
+    openProject(projectName, x, y);
     return;
 }
