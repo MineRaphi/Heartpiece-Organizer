@@ -39,8 +39,8 @@ void gotoxy(int x, int y);
 char** readProjectList(int *projectCount);
 int createProject(char name[]);
 void openProject(char name[], int x, int y);
-void deleteProject();                   // to be implemented
-void deleteProjectFiles(char name[]);   // to be implemented
+void deleteDirectoryContents(const char *dirPath);
+void deleteProject(char name[]);
 void readSceneStatus(char sceneName[], char projectName[], int sceneStatus[][11]);
 void editScene(char *sceneName, char *projectName, int x, int y, int yOffset);
 
@@ -81,6 +81,12 @@ int menu() {
     printf("3. Delete a project\n");
     printf("4. Exit\n");
     choice = getch();
+    int projectCount;
+    FILE *projectListRead;
+    projectListRead = fopen("./projects/projectList.hpo", "r");
+    fscanf(projectListRead, "%d", &projectCount);
+    char **projectNames = readProjectList(&projectCount);
+    fclose(projectListRead);
     switch(choice) {
         case '1':
             system(CLEAR_SCREEN);
@@ -91,15 +97,7 @@ int menu() {
             menu();
             break;
         case '2':
-            system(CLEAR_SCREEN);
-
-            int projectCount;
-            FILE *projectListRead;
-            projectListRead = fopen("./projects/projectList.hpo", "r");
-            fscanf(projectListRead, "%d", &projectCount);
-            char **projectNames = readProjectList(&projectCount);
-            fclose(projectListRead);
-        
+            system(CLEAR_SCREEN);        
             for(int i=0; i<projectCount; i++) {
                 printf("%d. %s\n", i+1, projectNames[i]);
             }
@@ -110,6 +108,17 @@ int menu() {
             }
             openProject(projectNames[input-1], 1 ,1);
             return 2;
+        case '3':
+            for(int i=0; i<projectCount; i++) {
+                printf("%d. %s\n", i+1, projectNames[i]);
+            }
+            int Input = getch() - '0';
+
+            if (input > projectCount) {
+                return 1;
+            }
+            deleteProject(projectNames[Input-1]);
+            return 1;
         case '4':
             return 2;
     }
@@ -478,6 +487,101 @@ void openProject(char name[], int x, int y) {
     }
     openProject(name, x, y);
     return;
+}
+
+// a function that deletes the contents of a directory
+void deleteDirectoryContents(const char *dirPath) {
+    #ifdef _WIN32
+        WIN32_FIND_DATA fileData;
+        HANDLE hFind;
+        char path[MAX_PATH];
+    
+        // Prepare the path pattern
+        snprintf(path, MAX_PATH, "%s\\*", dirPath);
+    
+        hFind = FindFirstFile(path, &fileData);
+        if (hFind == INVALID_HANDLE_VALUE) {
+            return;
+        }
+    
+        do {
+            // Skip the "." and ".." directories
+            if (strcmp(fileData.cFileName, ".") == 0 || strcmp(fileData.cFileName, "..") == 0) {
+                continue;
+            }
+    
+            // Construct the full path
+            snprintf(path, MAX_PATH, "%s\\%s", dirPath, fileData.cFileName);
+    
+            if (fileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+                // If it's a directory, call recursively
+                deleteDirectoryContents(path);
+                RemoveDirectory(path);
+            } else {
+                // If it's a file, delete it
+                DeleteFile(path);
+            }
+    
+        } while (FindNextFile(hFind, &fileData) != 0);
+    
+        FindClose(hFind);
+    #else
+        DIR *dir = opendir(dirPath);
+        struct dirent *entry;
+        struct stat statbuf;
+        char filePath[512];
+    
+        if (!dir) return;
+    
+        while ((entry = readdir(dir)) != NULL) {
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+                continue;
+            }
+    
+            snprintf(filePath, sizeof(filePath), "%s/%s", dirPath, entry->d_name);
+    
+            if (stat(filePath, &statbuf) == 0 && S_ISDIR(statbuf.st_mode)) {
+                deleteDirectoryContents(filePath);  // Recursive call
+                rmdir(filePath);
+            } else {
+                unlink(filePath);  // Remove file
+            }
+        }
+    
+        closedir(dir);
+    #endif
+    }
+    
+// a function that deletes a project
+void deleteProject(char name[]) {
+    char path[110] = "./projects/";
+    strcat(path, name);
+    deleteDirectoryContents(path);
+    RMDIR(path);
+
+    FILE *projectListRead;
+    projectListRead = fopen("./projects/projectList.hpo", "r");
+    int projectCount = 0;
+    fscanf(projectListRead, "%d", &projectCount);
+    char projects[projectCount][200];
+    for (int i = 0; i < projectCount; i++) {
+        fscanf(projectListRead, "%s", projects[i]);
+    }
+    fclose(projectListRead);
+
+    FILE *projectListWrite;
+    projectListWrite = fopen("./projects/projectList.hpo", "w");
+    fprintf(projectListWrite, "%d\n", projectCount-1);
+    for (int i = 0; i < projectCount; i++) {
+        if (strcmp(projects[i], name) != 0) {
+            fprintf(projectListWrite, "%s\n", projects[i]);
+        }
+    }
+    fclose(projectListWrite);
+    printf("Project successfully deleted\n");
+    getch();
+    getch();
+    menu();
 }
 
 // a function that reads the scene status
