@@ -19,9 +19,11 @@ async function login() {
         headers: {
             "Content-Type": "application/json",  // Ensure the content type is JSON
         },
-        body: JSON.stringify({ username: `${username}` })  // Send username in the request body
+        body: JSON.stringify({ username: `${username}`, password: `${password}` })  // Send username in the request body
     })
     .then(response => response.text())  // Read the response as text
     .then(data => console.log(data))  // Log the response from the backend
     .catch(error => console.error("Error:", error));  // Catch and log any errors
 }
+
+
