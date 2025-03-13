@@ -65,3 +65,15 @@ body {
     color: #e1e1e1;
     font-size: 1.5rem;
 }
+
+footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #FFC759; /* Optional: Set the background color */
+    color: #261447; /* Optional: Set the text color */
+    text-align: center; /* Optional: Center the text */
+    padding: 10px 0; /* Optional: Add padding */
+    padding-top: 3vh;
+  }
