@@ -1,7 +1,16 @@
 # Heartpiece-Organizer
 
-Used to manage .hpo files.
+Heartpiece-Organizer (HPO) is a web-based tool designed to help Heartpiece-Anime manage projects and track work states in an efficient and organized manner. This application allows users to manage projects, control progress, and view data in real-time.
+
+## Overview
+
+Heartpiece-Organizer is built as a tool for managing projects related to Heartpiece-Anime. It allows users to:
+ * Track project statuses and progress.
+ * Manage project data securely with a login system.
+ * Update project states in a backend database.
+
+The tool has a secure login system and ensures that only authorized users can interact with the project data. It is designed to be simple, efficient, and secure, with an intuitive web interface.
 
 ## License
-<p xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/"><a property="dct:title" rel="cc:attributionURL" href="https://github.com/MineRaphi/
-HeartPiece-Organizer">Heartpiece Organizer</a> by <span property="cc:attributionName">Mikecraft and MineRaphi</span> is licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">CC BY-NC-SA 4.0<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1" alt=""><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1" alt=""></a></p>
+
+Heartpiece-Organizer is licensed under the GNU General Public License v3.0. See the LICENSE file for more information.
