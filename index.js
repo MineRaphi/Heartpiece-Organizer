@@ -3,9 +3,13 @@ const bcrypt = require("bcrypt");
 const path = require("path");
 const fs = require("fs");
 const https = require("https");
+const cookieParser = require("cookie-parser");
+const crypto = require("crypto");
 
 const saltRounds = 10;
 const app = express();
+
+app.use(cookieParser());
 
 // Load SSL certificate and private key
 const sslOptions = {
@@ -84,6 +88,11 @@ async function genHash(password, saltRounds) {
         console.error("Error hashing password:", err);
         throw err; // Re-throw the error for better error handling
     }
+}
+
+async function genUUID(username) {
+    let uuid = crypto.randomUUID();
+    
 }
 
 const http = require("http");

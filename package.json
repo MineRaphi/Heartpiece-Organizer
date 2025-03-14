@@ -20,7 +20,9 @@
   "homepage": "https://github.com/MineRaphi/HeartPiece-Organizer#readme",
   "dependencies": {
     "bcrypt": "^5.1.1",
-    "express": "^4.21.2"
+    "cookie-parser": "^1.4.7",
+    "express": "^4.21.2",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
