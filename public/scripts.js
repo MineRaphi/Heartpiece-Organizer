@@ -17,9 +17,10 @@ async function login() {
     fetch("/loginRequest", {
         method: "POST",
         headers: {
-            "Content-Type": "application/json",  // Ensure the content type is JSON
+            "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username: `${username}`, password: `${password}` })  // Send username in the request body
+        credentials: "include",  // This allows cookies to be set and sent
+        body: JSON.stringify({ username, password }) 
     })
     .then(response => response.text())  // Read the response as text
     .then(data => {
@@ -52,3 +53,21 @@ function changePassword(username) {
         body: JSON.stringify({ username: `${username}`, newPassword: `${newPassword}` })
     });
 }
+
+async function checkUUID() {
+    const response = await fetch("/checkUUID", {
+        method: "GET",
+        credentials: "same-origin", // Ensures cookies are sent with the request
+    });
+
+    const data = await response.json();
+    if (data.success) {
+        console.log("UUID is valid.");
+        alert("Logged in");
+    } else {
+        console.log("UUID is not valid.");
+    }
+}
+
+// Call the function to check the UUID
+checkUUID();

@@ -23,6 +23,26 @@ app.use(express.json());
 // Serve static files
 app.use(express.static(path.join(__dirname, "public")));
 
+app.get("/checkUUID", (req, res) => {
+    const uuidFromCookie = req.cookies.uuid;
+
+    if (!uuidFromCookie) {
+        return res.json({ success: false, message: "UUID not found in cookies." });
+    }
+
+    // Read users.json to find the user with this UUID
+    const usersData = fs.readFileSync(path.join(__dirname, "users.json"), "utf8");
+    const users = JSON.parse(usersData).users;
+
+    const user = users.find(user => user.uuid === uuidFromCookie);
+    
+    if (user) {
+        return res.json({ success: true, message: "UUID is valid.", user });
+    } else {
+        return res.json({ success: false, message: "UUID is not valid." });
+    }
+});
+
 app.post("/changePassword", async (req, res) => {
     const { username, newPassword } = req.body;
 
@@ -61,25 +81,55 @@ app.post("/loginRequest", async (req, res) => {
 
     // Find user
     const user = users.find(user => user.name === username);
-    
-    if (!user) return res.json({ "success": false });
+    if (!user) return res.json({ success: false });
 
     // Check if user has the default password and needs to change it
-    if (password == "heartpiecePassword1121" && user.password == "heartpiecePassword1121") {
-        res.json({ success: true, needToChangePassword: true });
-        return;
+    if (password === "heartpiecePassword1121" && user.password === "heartpiecePassword1121") {
+        return res.json({ success: true, needToChangePassword: true });
     }
 
     let samePassword = await bcrypt.compare(password, user.password);
 
     // Compare password
     if (samePassword) {
-        res.json({ success: true });
+        let uuid = await genUUID(username);
+        await saveUUID(username, uuid); // Ensure it's stored before proceeding
+
+        // Set secure HTTP-only cookie
+        res.cookie("uuid", uuid, {
+            httpOnly: true,  // Prevent JavaScript access (better security)
+            secure: true,    // Send only over HTTPS
+            sameSite: "Lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        return res.json({ success: true });
     }
-    else {
-        res.json({ success: false });
-    }
+
+    return res.json({ success: false });
 });
+
+async function saveUUID(username, uuid) {
+    try {
+        const usersFilePath = path.join(__dirname, "users.json");
+        const usersData = fs.readFileSync(usersFilePath, "utf8");
+        const usersObj = JSON.parse(usersData);
+        const users = usersObj.users;
+
+        // Find user
+        const user = users.find(user => user.name === username);
+        if (!user) return console.log("User not found");
+
+        // Update UUID
+        user.uuid = uuid;
+
+        // Write back to file
+        fs.writeFileSync(usersFilePath, JSON.stringify(usersObj, null, 4), "utf8");
+    } catch (err) {
+        console.error("Error saving UUID:", err);
+        throw err;
+    }
+}
 
 async function genHash(password, saltRounds) {
     try {
@@ -90,9 +140,9 @@ async function genHash(password, saltRounds) {
     }
 }
 
-async function genUUID(username) {
+async function genUUID() {
     let uuid = crypto.randomUUID();
-    
+    return uuid;
 }
 
 const http = require("http");
