@@ -109,6 +109,30 @@ app.post("/loginRequest", async (req, res) => {
     return res.json({ success: false });
 });
 
+app.post("/logout", (req, res) => {
+    try {
+        const usersFilePath = path.join(__dirname, "users.json");
+        const usersData = fs.readFileSync(usersFilePath, "utf8");
+        const usersObj = JSON.parse(usersData);
+        const users = usersObj.users;
+
+        // Find user
+        const user = users.find(user => user.uuid === req.cookies.uuid);
+        if (!user) return console.log("User not found");
+
+        // Clear UUID
+        user.uuid = "";
+        
+        // Write back to file
+        fs.writeFileSync(usersFilePath, JSON.stringify(usersObj, null, 4), "utf8");
+    } catch (err) {
+        console.error("Error clearing UUID:", err);
+        throw err;
+    }
+    res.clearCookie("uuid");
+    res.send("Logged out successfully!");
+});
+
 async function saveUUID(username, uuid) {
     try {
         const usersFilePath = path.join(__dirname, "users.json");

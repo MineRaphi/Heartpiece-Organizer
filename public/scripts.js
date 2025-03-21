@@ -1,9 +1,11 @@
-document.getElementById("loginForm").addEventListener("keydown", function(event) {
-    if (event.key === "Enter") {
-      event.preventDefault(); // Prevent form submission
-      document.getElementById("loginButton").click(); // Trigger button click
-    }
-});
+if (window.location.pathname == "/") {
+    document.getElementById("loginForm").addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+          event.preventDefault(); // Prevent form submission
+          document.getElementById("loginButton").click(); // Trigger button click
+        }
+    });
+}
 
 async function login() {
     var username = document.getElementById("username").value;
@@ -31,10 +33,26 @@ async function login() {
                 changePassword(username);
             }
             document.getElementById("loginForm").reset();
+            window.location.href = "/home/";
         }
         else {
             alert("Login failed!");
         }
+    })  // Log the response from the backend
+    .catch(error => console.error("Error:", error));  // Catch and log any errors
+}
+
+async function logout() {
+    fetch("/logout", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        credentials: "include",  // This allows cookies to be set and sent
+    })
+    .then(response => response.text())  // Read the response as text
+    .then(data => {
+        window.location.href = "/";
     })  // Log the response from the backend
     .catch(error => console.error("Error:", error));  // Catch and log any errors
 }
@@ -61,11 +79,15 @@ async function checkUUID() {
     });
 
     const data = await response.json();
-    if (data.success) {
-        console.log("UUID is valid.");
-        alert("Logged in");
-    } else {
-        console.log("UUID is not valid.");
+    if (!data.success) {
+        if (window.location.pathname != "/") {
+            window.location.href = "/";
+        }
+    }
+    else {
+        if (window.location.pathname == "/") {
+            window.location.href = "/home/";
+        }
     }
 }
 
