@@ -102,15 +102,15 @@ async function checkUUID() {
 
 function displayProjects(projects) {
     const container = document.getElementById("projects");
-    container.innerHTML = ""; // Clear previous content
+    container.innerHTML = "";
 
     projects.forEach(project => {
         const projectElement = document.createElement("div");
+        projectElement.classList.add("project");
         projectElement.innerHTML = `
-            <h3>${project.name}</h3>
+            <h2>${project.name}</h3>
             <p>${project.description}</p>
-            <p>Status: <strong>${project.status}</strong></p>
-            <hr>
+            <p>Status: <b>${project.status}</b></p>
         `;
         container.appendChild(projectElement);
     });

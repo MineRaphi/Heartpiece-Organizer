@@ -9,6 +9,7 @@
 body {
     background-color: #F4F89E;
     font-family: sans-serif;
+    color: #261447;
 }
 
 #loginScreen {
@@ -19,7 +20,6 @@ body {
     width: 60vw;
     background-color: #FFC759;
     border-radius: 20px;
-    color: #261447;
 }
 
 #loginScreen h1 {
@@ -76,4 +76,34 @@ footer {
     text-align: center; /* Optional: Center the text */
     padding: 10px 0; /* Optional: Add padding */
     padding-top: 3vh;
-  }
+}
+
+#logoutButton {
+    position: absolute; 
+    left: 92vw; 
+    top: 15px;
+    padding-left: 1.5%;
+    padding-right: 1.5%;
+    height: 45px;
+    border-radius: 5px;
+    border: none;
+    background-color: #FF8C42;
+    color: #e1e1e1;
+    font-size: 1.5rem;
+}
+
+#projects {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 25px;
+    width: 80vw; 
+    margin: auto;
+    margin-top: 10vh;
+}
+
+.project {
+    background-color: #FFC759;
+    border-radius: 20px;
+    padding: 10px;
+    text-align: center;
+}
