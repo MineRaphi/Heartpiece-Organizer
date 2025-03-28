@@ -133,6 +133,17 @@ app.post("/logout", (req, res) => {
     res.send("Logged out successfully!");
 });
 
+app.get("/getProjects", (req, res) => {
+    try {
+        const projectsData = fs.readFileSync(path.join(__dirname, "/projects/projectList.json"), "utf8");
+        const projects = JSON.parse(projectsData);
+        res.json(projects); // Send JSON directly (no extra wrapping)
+    } catch (error) {
+        console.error("Error reading JSON file:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
 async function saveUUID(username, uuid) {
     try {
         const usersFilePath = path.join(__dirname, "users.json");

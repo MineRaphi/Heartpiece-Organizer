@@ -88,7 +88,32 @@ async function checkUUID() {
         if (window.location.pathname == "/") {
             window.location.href = "/home/";
         }
+        fetch("/getProjects", {
+            method: "GET",
+            credentials: "include"
+        })
+        .then(response => response.json())  // Parse JSON directly
+        .then(data => {
+            displayProjects(data.projects); // Call function to display data
+        })
+        .catch(error => console.error("Error:", error));
     }
+}
+
+function displayProjects(projects) {
+    const container = document.getElementById("projects");
+    container.innerHTML = ""; // Clear previous content
+
+    projects.forEach(project => {
+        const projectElement = document.createElement("div");
+        projectElement.innerHTML = `
+            <h3>${project.name}</h3>
+            <p>${project.description}</p>
+            <p>Status: <strong>${project.status}</strong></p>
+            <hr>
+        `;
+        container.appendChild(projectElement);
+    });
 }
 
 // Call the function to check the UUID
