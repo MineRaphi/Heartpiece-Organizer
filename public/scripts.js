@@ -16,6 +16,8 @@ async function login() {
         return
     }
 
+    username = username.toLowerCase();
+
     fetch("/loginRequest", {
         method: "POST",
         headers: {
@@ -28,7 +30,6 @@ async function login() {
     .then(data => {
         data = JSON.parse(data);
         if (data.success == true) {
-            alert("Login successful!");
             if (data.needToChangePassword == true) {
                 changePassword(username);
             }
@@ -43,7 +44,7 @@ async function login() {
 }
 
 async function logout() {
-    fetch("/logout", {
+    await fetch("/logout", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -55,6 +56,7 @@ async function logout() {
         window.location.href = "/";
     })  // Log the response from the backend
     .catch(error => console.error("Error:", error));  // Catch and log any errors
+    window.location.href = "/";
 }
 
 function changePassword(username) {
@@ -78,7 +80,15 @@ async function checkUUID() {
         credentials: "same-origin", // Ensures cookies are sent with the request
     });
 
+    if (response.status == 500) {
+        if (window.location.pathname != "/") {
+            window.location.href = "/";
+        }
+    }
+
     const data = await response.json();
+    let userRole = data.user.role;
+
     if (!data.success) {
         if (window.location.pathname != "/") {
             window.location.href = "/";
@@ -88,19 +98,19 @@ async function checkUUID() {
         if (window.location.pathname == "/") {
             window.location.href = "/home/";
         }
-        fetch("/getProjects", {
+        await fetch("/getProjects", {
             method: "GET",
             credentials: "include"
         })
         .then(response => response.json())  // Parse JSON directly
         .then(data => {
-            displayProjects(data.projects); // Call function to display data
+            displayProjects(data.projects, userRole); // Call function to display data
         })
         .catch(error => console.error("Error:", error));
     }
 }
 
-function displayProjects(projects) {
+function displayProjects(projects, role) {
     const container = document.getElementById("projects");
     container.innerHTML = "";
 
@@ -114,6 +124,64 @@ function displayProjects(projects) {
         `;
         container.appendChild(projectElement);
     });
+
+    if (role == 3) {
+        const projectElement = document.createElement("div");
+        projectElement.classList.add("new-project");
+        projectElement.innerHTML = `
+            <h1>${"+"}</h1>
+        `;
+        projectElement.addEventListener("click", () => {
+            createNewProject();
+        });
+        container.appendChild(projectElement);
+    }
+}
+
+async function createNewProject() {
+    const response = await fetch("/checkUUID", {
+        method: "GET",
+        credentials: "same-origin", // Ensures cookies are sent with the request
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+        if (window.location.pathname != "/") {
+            window.location.href = "/";
+        }
+    }
+    else if (data.user.role != 3) {
+        alert("Error: Permission denied!");
+        return;
+    }
+    
+    const projectName = prompt("Enter the name of the new project:");
+    if (projectName == null || projectName == "") {
+        return;
+    }
+    const projectDescription = prompt("Enter the description of the new project:");
+    if (projectDescription == null || projectDescription == "") {
+        return;
+    }
+    const projectStatus = prompt("Enter the status of the new project:");
+    if (projectStatus == null || projectStatus == "") {
+        return;
+    }
+    await fetch("/createNewProject", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ projectName, projectDescription, projectStatus })
+    })
+    .then(response => response.text())  // Read the response as text
+    .then(data => {
+        if (data != "Project created successfully!") {
+            alert("Error creating project!");
+        }
+    })
+    window.location.reload();
 }
 
 // Call the function to check the UUID

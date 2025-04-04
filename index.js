@@ -36,6 +36,10 @@ app.get("/checkUUID", (req, res) => {
 
     const user = users.find(user => user.uuid === uuidFromCookie);
     
+    if (user.uuid == "") {
+        return res.json({ success: false, message: "UUID is empty." });
+    }
+
     if (user) {
         return res.json({ success: true, message: "UUID is valid.", user });
     } else {
@@ -92,16 +96,28 @@ app.post("/loginRequest", async (req, res) => {
 
     // Compare password
     if (samePassword) {
-        let uuid = await genUUID(username);
-        await saveUUID(username, uuid); // Ensure it's stored before proceeding
 
-        // Set secure HTTP-only cookie
-        res.cookie("uuid", uuid, {
-            httpOnly: true,  // Prevent JavaScript access (better security)
-            secure: true,    // Send only over HTTPS
-            sameSite: "Lax",
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-        });
+        if (user.uuid == "") {
+            let uuid = await genUUID(username);
+            await saveUUID(username, uuid); // Ensure it's stored before proceeding
+            // Set secure HTTP-only cookie
+            res.cookie("uuid", uuid, {
+                httpOnly: true,  // Prevent JavaScript access (better security)
+                secure: true,    // Send only over HTTPS
+                sameSite: "Lax",
+                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            });
+        }
+        else {
+            // Set secure HTTP-only cookie
+            res.cookie("uuid", user.uuid, {
+                httpOnly: true,  // Prevent JavaScript access (better security)
+                secure: true,    // Send only over HTTPS
+                sameSite: "Lax",
+                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            });
+        }
+
 
         return res.json({ success: true });
     }
@@ -144,6 +160,32 @@ app.get("/getProjects", (req, res) => {
     }
 });
 
+app.post("/createNewProject", (req, res) => {
+    const { projectName, projectDescription, projectStatus } = req.body;
+
+    if (!projectName || !projectDescription || !projectStatus) {
+        return res.status(400).send("Project name, description, and status are required");
+    }
+
+    // Read projects.json
+    const projectsFilePath = path.join(__dirname, "/projects/projectList.json");
+    const projectsData = fs.readFileSync(projectsFilePath, "utf8");
+    const projectsObj = JSON.parse(projectsData);
+    const projects = projectsObj.projects;
+
+    // create new project
+    const newProject = {
+        name: projectName,
+        description: projectDescription,
+        status: projectStatus
+    };
+    projects.push(newProject);
+
+    // Write back to file
+    fs.writeFileSync(projectsFilePath, JSON.stringify(projectsObj, null, 4), "utf8");
+    res.send("Project created successfully!");
+});
+
 async function saveUUID(username, uuid) {
     try {
         const usersFilePath = path.join(__dirname, "users.json");
@@ -179,6 +221,7 @@ async function genUUID() {
     let uuid = crypto.randomUUID();
     return uuid;
 }
+
 
 const http = require("http");
 const { hash } = require("crypto");
