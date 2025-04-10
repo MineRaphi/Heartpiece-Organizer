@@ -193,6 +193,7 @@ async function editProject(index) {
     <input class="edit-description" value="${oldDescription}" type="text">
     <input class="edit-status" value="${oldStatus}" type="text">
     <br>
+    <button class="edit-save" onclick="saveEditedProject(${index}, '${oldName}')">SAVE</button>
     <button class="edit-delete" onclick="deleteProject(${index})">DELETE</button>
     `;
 }
