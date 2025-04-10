@@ -107,6 +107,63 @@ footer {
     border-radius: 20px;
     padding: 10px;
     text-align: center;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.project:hover {
+    background-color: #FFD059;
+    cursor: pointer;
+}
+
+.edit-button {
+    position: relative;
+    left: 45%;
+    vertical-align: bottom;
+    border: none;
+    outline: none;
+    background: none;
+}
+
+.edit-button:hover {
+    background-color: rgba(128, 128, 128, 0.183);
+    border-radius: 100%;
+    width: 35px;
+    height: 35px;
+}
+
+.edit-title {
+    font-size: 1.5rem;
+    margin-top: 1vh;
+    resize: none;
+}
+
+.edit-description {
+    font-size: 1.3rem;
+    margin-top: 1vh;
+    resize: none;
+}
+
+.edit-status {
+    font-size: 1.1rem;
+    margin-top: 1vh;
+    margin-bottom: 1vh;
+}
+
+.edit-save {
+    position: relative;
+    vertical-align: bottom;
+    border: none;
+    outline: none;
+    background: teal;
+}
+
+.edit-delete {
+    position: relative;
+    vertical-align: bottom;
+    border: none;
+    outline: none;
+    background: red;
 }
 
 .new-project {

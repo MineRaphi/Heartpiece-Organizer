@@ -114,16 +114,36 @@ function displayProjects(projects, role) {
     const container = document.getElementById("projects");
     container.innerHTML = "";
 
-    projects.forEach(project => {
-        const projectElement = document.createElement("div");
-        projectElement.classList.add("project");
-        projectElement.innerHTML = `
-            <h2>${project.name}</h3>
+    let i = 0;
+    if (role == 3) {
+        projects.forEach(project => {
+            const projectElement = document.createElement("div");
+            projectElement.classList.add("project");
+            projectElement.setAttribute("id", `project${i}`);
+            projectElement.innerHTML = `
+            <button class="edit-button" onclick="editProject(${i})"><span class="material-symbols-outlined">edit</span></button>
+            <h2>${project.name}</h2>
             <p>${project.description}</p>
             <p>Status: <b>${project.status}</b></p>
-        `;
-        container.appendChild(projectElement);
-    });
+            `;
+            container.appendChild(projectElement);
+            i++;
+        });
+    }
+    else {
+        projects.forEach(project => {
+            const projectElement = document.createElement("div");
+            projectElement.classList.add("project");
+            projectElement.setAttribute("id", `project${i}`);
+            projectElement.innerHTML = `
+            <h2>${project.name}</h2>
+            <p>${project.description}</p>
+            <p>Status: <b>${project.status}</b></p>
+            `;
+            container.appendChild(projectElement);
+            i++;
+        });
+    }
 
     if (role == 3) {
         const projectElement = document.createElement("div");
@@ -135,6 +155,102 @@ function displayProjects(projects, role) {
             createNewProject();
         });
         container.appendChild(projectElement);
+    }
+}
+
+async function editProject(index) {
+    const response = await fetch("/checkUUID", {
+        method: "GET",
+        credentials: "same-origin", // Ensures cookies are sent with the request
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+        if (window.location.pathname != "/") {
+            window.location.href = "/";
+        }
+    }
+    else if (data.user.role != 3) {
+        alert("Error: Permission denied!");
+        return;
+    }
+
+
+    let oldName = document.getElementById(`project${index}`).getElementsByTagName("h2")[0].innerHTML;
+    let oldDescription = document.getElementById(`project${index}`).getElementsByTagName("p")[0].innerHTML;
+    let oldStatus = document.getElementById(`project${index}`).getElementsByTagName("p")[1].innerHTML;
+
+    oldStatus = oldStatus.replace("Status: ", "");
+    oldStatus = oldStatus.replace("<b>", "");
+    oldStatus = oldStatus.replace("</b>", "");
+
+    const projectElement = document.getElementById(`project${index}`);
+    projectElement.innerHTML = `
+    <button class="edit-button" onclick="editProject(${index})"><span class="material-symbols-outlined">edit</span></button>
+    <br>
+    <textarea class="edit-title" value="${oldName}" type="text">${oldName}</textarea>
+    <input class="edit-description" value="${oldDescription}" type="text">
+    <input class="edit-status" value="${oldStatus}" type="text">
+    <br>
+    <button class="edit-delete" onclick="deleteProject(${index})">DELETE</button>
+    `;
+}
+
+async function saveEditedProject(index, oldName) {
+    const response = await fetch("/checkUUID", {
+        method: "GET",
+        credentials: "same-origin", // Ensures cookies are sent with the request
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+        if (window.location.pathname != "/") {
+            window.location.href = "/";
+        }
+    }
+    else if (data.user.role != 3) {
+        alert("Error: Permission denied!");
+        return;
+    }
+
+    let newName = document.getElementById(`project${index}`).getElementsByTagName("textarea")[0].value;
+    let newDescription = document.getElementById(`project${index}`).getElementsByTagName("input")[0].value;
+    let newStatus = document.getElementById(`project${index}`).getElementsByTagName("input")[1].value;
+
+    await fetch("/saveEditedProject", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ newName, newDescription, newStatus, oldName })
+    })
+    .then(response => response.text())  // Read the response as text
+    .then(data => {
+        if (data != "Project edited successfully!") {
+            alert("Error editing project!");
+        }
+    })
+    window.location.reload();
+}
+
+async function deleteProject(index) {
+    const response = await fetch("/checkUUID", {
+        method: "GET",
+        credentials: "same-origin", // Ensures cookies are sent with the request
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+        if (window.location.pathname != "/") {
+            window.location.href = "/";
+        }
+    }
+    else if (data.user.role != 3) {
+        alert("Error: Permission denied!");
+        return;
     }
 }
 

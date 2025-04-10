@@ -186,6 +186,34 @@ app.post("/createNewProject", (req, res) => {
     res.send("Project created successfully!");
 });
 
+app.post("/saveEditedProject", (req, res) => {
+    const { newName, newDescription, newStatus, oldName } = req.body;
+
+    if (!newName || !newDescription || !newStatus) {
+        console.log(newName, newDescription, newStatus);
+        return res.status(400).send("Project name, description, and status are required");
+    }
+
+    // Read projects.json
+    const projectsFilePath = path.join(__dirname, "/projects/projectList.json");
+    const projectsData = fs.readFileSync(projectsFilePath, "utf8");
+    const projectsObj = JSON.parse(projectsData);
+    const projects = projectsObj.projects;
+
+    // Find project
+    const project = projects.find(project => project.name === oldName);
+    if (!project) return res.send("Project not found");
+
+    // Update project
+    project.name = newName;
+    project.description = newDescription;
+    project.status = newStatus;
+
+    // Write back to file
+    fs.writeFileSync(projectsFilePath, JSON.stringify(projectsObj, null, 4), "utf8");
+    res.send("Project edited successfully!");
+});
+
 async function saveUUID(username, uuid) {
     try {
         const usersFilePath = path.join(__dirname, "users.json");
