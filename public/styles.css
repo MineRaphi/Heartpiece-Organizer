@@ -141,7 +141,6 @@ footer {
 .edit-description {
     font-size: 1.3rem;
     margin-top: 1vh;
-    resize: none;
 }
 
 .edit-status {
@@ -154,16 +153,38 @@ footer {
     position: relative;
     vertical-align: bottom;
     border: none;
+    border-radius: 5px;
     outline: none;
-    background: teal;
+    background: #43a047;
+    color: #1a1a1a;
+}
+
+.edit-save:hover {
+    background-color: #388e3c;
+    cursor:context-menu;
+}
+
+.edit-save:active {
+    background-color: #2e7d32;
 }
 
 .edit-delete {
     position: relative;
     vertical-align: bottom;
     border: none;
+    border-radius: 5px;
     outline: none;
-    background: red;
+    background: #e53935;
+    color: #261447;
+}
+
+.edit-delete:hover {
+    background-color: #d32f2f;
+    cursor: pointer;
+}
+
+.edit-delete:active {
+    background-color: #c62828;
 }
 
 .new-project {

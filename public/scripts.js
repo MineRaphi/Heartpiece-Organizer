@@ -1,3 +1,4 @@
+// allows the user to press enter to submit the login form
 if (window.location.pathname == "/") {
     document.getElementById("loginForm").addEventListener("keydown", function(event) {
         if (event.key === "Enter") {
@@ -7,6 +8,7 @@ if (window.location.pathname == "/") {
     });
 }
 
+// global variables
 let editing = false;
 let editingIndex = -1;
 
