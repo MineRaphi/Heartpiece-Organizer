@@ -7,6 +7,9 @@ if (window.location.pathname == "/") {
     });
 }
 
+let editing = false;
+let editingIndex = -1;
+
 async function login() {
     var username = document.getElementById("username").value;
     var password = document.getElementById("password").value;
@@ -159,6 +162,21 @@ function displayProjects(projects, role) {
 }
 
 async function editProject(index) {
+    console.log(editing);
+    console.log(editingIndex);
+    if (editing) {
+        if (editingIndex != index) {
+            await cancelEdit(editingIndex);
+        }
+        else {
+            await cancelEdit(index);
+            return;
+        }
+    }
+
+    editing = true;
+    editingIndex = index;
+
     const response = await fetch("/checkUUID", {
         method: "GET",
         credentials: "same-origin", // Ensures cookies are sent with the request
@@ -196,6 +214,49 @@ async function editProject(index) {
     <button class="edit-save" onclick="saveEditedProject(${index}, '${oldName}')">SAVE</button>
     <button class="edit-delete" onclick="deleteProject(${index})">DELETE</button>
     `;
+}
+
+async function cancelEdit(index) {
+    if (!editing) {
+        return;
+    }
+
+    const response = await fetch("/checkUUID", {
+        method: "GET",
+        credentials: "same-origin", // Ensures cookies are sent with the request
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+        if (window.location.pathname != "/") {
+            window.location.href = "/";
+        }
+    }
+    else if (data.user.role != 3) {
+        alert("Error: Permission denied!");
+        return;
+    }
+
+    fetch("/getProjects", {
+        method: "GET",
+        credentials: "include"
+    })
+    .then(response => response.json())  // Parse JSON directly
+    .then(data => {
+        project = data.projects[index];
+        const projectElement = document.getElementById(`project${index}`);
+        projectElement.innerHTML = `
+        <button class="edit-button" onclick="editProject(${index})"><span class="material-symbols-outlined">edit</span></button>
+        <h2>${project.name}</h2>
+        <p>${project.description}</p>
+        <p>Status: <b>${project.status}</b></p>
+        `;
+    })
+    .catch(error => console.error("Error:", error));
+
+    editing = false;
+    editingIndex = -1;
 }
 
 async function saveEditedProject(index, oldName) {
