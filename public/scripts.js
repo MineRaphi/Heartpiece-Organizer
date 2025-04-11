@@ -253,6 +253,21 @@ async function deleteProject(index) {
         alert("Error: Permission denied!");
         return;
     }
+
+    await fetch("/deleteProject", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ projectName: document.getElementById(`project${index}`).getElementsByClassName("edit-title")[0].value })
+    })
+    .then(response => response.text())  // Read the response as text
+    .then(data => {
+        if (data != "Project deleted successfully!") {
+            alert("Error deleting project!");
+        }
+    })
+    window.location.reload();
 }
 
 async function createNewProject() {

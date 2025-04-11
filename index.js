@@ -187,12 +187,14 @@ app.post("/createNewProject", (req, res) => {
 });
 
 app.post("/saveEditedProject", (req, res) => {
-    const { newName, newDescription, newStatus, oldName } = req.body;
+    let { newName, newDescription, newStatus, oldName } = req.body;
 
     if (!newName || !newDescription || !newStatus) {
         console.log(newName, newDescription, newStatus);
         return res.status(400).send("Project name, description, and status are required");
     }
+
+    newName = newName.replace("\n", " ");
 
     // Read projects.json
     const projectsFilePath = path.join(__dirname, "/projects/projectList.json");
@@ -212,6 +214,31 @@ app.post("/saveEditedProject", (req, res) => {
     // Write back to file
     fs.writeFileSync(projectsFilePath, JSON.stringify(projectsObj, null, 4), "utf8");
     res.send("Project edited successfully!");
+});
+
+app.post("/deleteProject", (req, res) => {
+    const { projectName } = req.body;
+    console.log(projectName);
+
+    if (!projectName) {
+        return res.status(400).send("Project name is required");
+    }
+
+    // Read projects.json
+    const projectsFilePath = path.join(__dirname, "/projects/projectList.json");
+    const projectsData = fs.readFileSync(projectsFilePath, "utf8");
+    const projectsObj = JSON.parse(projectsData);
+    const projects = projectsObj.projects;
+
+    // Find and remove project
+    const projectIndex = projects.findIndex(project => project.name === projectName);
+    if (projectIndex === -1) return res.send("Project not found");
+
+    projects.splice(projectIndex, 1);
+
+    // Write back to file
+    fs.writeFileSync(projectsFilePath, JSON.stringify(projectsObj, null, 4), "utf8");
+    res.send("Project deleted successfully!");
 });
 
 async function saveUUID(username, uuid) {
