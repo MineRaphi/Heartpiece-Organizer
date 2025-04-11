@@ -133,20 +133,33 @@ footer {
 }
 
 .edit-title {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
+    text-align: center;
     margin-top: 1vh;
     resize: none;
+    border-radius: 5px;
+    border-color: #CC9933;
+    border-style: solid;
 }
 
 .edit-description {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
+    width: 95%;
     margin-top: 1vh;
+    border-radius: 5px;
+    border-color: #CC9933;
+    border-style: solid;
 }
 
 .edit-status {
     font-size: 1.1rem;
+    text-align: center;
     margin-top: 1vh;
     margin-bottom: 1vh;
+    border-radius: 5px;
+    border-color: #CC9933;
+    border-style: solid;
+    width: 50%;
 }
 
 .edit-save {
