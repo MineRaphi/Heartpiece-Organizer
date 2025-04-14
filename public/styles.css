@@ -174,7 +174,7 @@ footer {
 
 .edit-save:hover {
     background-color: #388e3c;
-    cursor:context-menu;
+    cursor: pointer;
 }
 
 .edit-save:active {
