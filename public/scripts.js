@@ -206,6 +206,7 @@ async function editProject(event, index) {
 
     else if (data.user.role != 3) {
         alert("Error: Permission denied!");
+        window.location.href = "/home/";
         return;
     }
 
@@ -262,6 +263,7 @@ async function cancelEdit(index) {
     }
     else if (data.user.role != 3) {
         alert("Error: Permission denied!");
+        window.location.href = "/home/";
         return;
     }
 
