@@ -79,9 +79,9 @@ footer {
 }
 
 #logoutButton {
-    position: absolute; 
-    right: 1vw;
-    top: 15px;
+    position: absolute;
+    right: 1.1vw;
+    top: 20px;
     left: auto;
     padding-left: 1.5%;
     padding-right: 1.5%;
@@ -91,6 +91,11 @@ footer {
     background-color: #FF8C42;
     color: #e1e1e1;
     font-size: 1.5rem;
+}
+
+#logoutButton:hover {
+    background-color: #ee7c35;
+    cursor: pointer;
 }
 
 #projects {
@@ -115,7 +120,6 @@ footer {
     background-color: #FFD059;
     cursor: pointer;
 }
-
 .edit-button {
     position: relative;
     left: 45%;
@@ -123,13 +127,15 @@ footer {
     border: none;
     outline: none;
     background: none;
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 0;
 }
 
 .edit-button:hover {
-    background-color: rgba(128, 128, 128, 0.183);
-    border-radius: 100%;
-    width: 35px;
-    height: 35px;
+    color: #6E40C9;
+    cursor: pointer;
 }
 
 .edit-title {
@@ -165,11 +171,13 @@ footer {
 .edit-save {
     position: relative;
     vertical-align: bottom;
+    margin-right: 2px;
     border: none;
-    border-radius: 5px;
+    border-radius: 7px;
     outline: none;
     background: #43a047;
     color: #1a1a1a;
+    width: 17%;
 }
 
 .edit-save:hover {
@@ -184,11 +192,13 @@ footer {
 .edit-delete {
     position: relative;
     vertical-align: bottom;
+    margin-left: 2px;
     border: none;
-    border-radius: 5px;
+    border-radius: 7px;
     outline: none;
     background: #e53935;
     color: #261447;
+    width: 17%;
 }
 
 .edit-delete:hover {
@@ -226,6 +236,26 @@ footer {
     background-color: #F4F89E;
     border: 2px dashed #FFC759;
     color: #FFC759;
+}
+
+#projectInfo {
+    display: none;
+}
+
+#closeInfoButton {
+    padding-left: 1.5%;
+    padding-right: 1.5%;
+    height: 45px;
+    border-radius: 5px;
+    border: none;
+    background-color: #FF8C42;
+    color: #e1e1e1;
+    font-size: 1.5rem;
+}
+
+#closeInfoButton:hover {
+    background-color: #ee7c35;
+    cursor: pointer;
 }
 
 @media (max-width: 900px) {

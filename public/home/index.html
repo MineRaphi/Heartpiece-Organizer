@@ -5,12 +5,15 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
         <link rel="stylesheet" href="/styles.css">
         <link rel="icon" type="image/png" href="/images/icon.png">
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=edit" />
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
         <title>Heartpiece Organizer</title>
     </head>
     <body>
-        <button type="button" onclick="logout()" id="logoutButton" class="logout-button"><b>Logout</b></button>
-        <div id="projects" class="projects"></div>
+        <button type="button" onclick="logout()" id="logoutButton" class="logout-button material-symbols-outlined"><b>Logout</b></button>
+        <div id="projects"></div>
+        <div id="projectInfo">
+            <button type="button" onclick="closeProjectInfo()" id="closeInfoButton"><span class="material-symbols-outlined">arrow_back</span></button>
+        </div>
     </body>
     <script src="/scripts.js"></script>
     <footer

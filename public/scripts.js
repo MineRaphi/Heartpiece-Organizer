@@ -8,6 +8,14 @@ if (window.location.pathname == "/") {
     });
 }
 
+window.addEventListener("DOMContentLoaded", () => {
+    openProject(window.location.hash.substring(1));
+});
+
+window.addEventListener("hashchange", () => {
+    openProject(window.location.hash.substring(1));
+});
+
 // global variables
 let editing = false;
 let editingIndex = -1;
@@ -121,18 +129,20 @@ function displayProjects(projects, role) {
 
     let i = 0;
     if (role == 3) {
-        projects.forEach(project => {
+        projects.forEach((project, i) => {
             const projectElement = document.createElement("div");
             projectElement.classList.add("project");
+            projectElement.onclick = () => {
+                window.location.hash = `#${i}`;
+            };
             projectElement.setAttribute("id", `project${i}`);
             projectElement.innerHTML = `
-            <button class="edit-button" onclick="editProject(${i})"><span class="material-symbols-outlined">edit</span></button>
+            <button class="edit-button" onclick="editProject(event, ${i})"><span class="material-symbols-outlined">edit</span></button>
             <h2>${project.name}</h2>
             <p>${project.description}</p>
             <p>Status: <b>${project.status}</b></p>
             `;
             container.appendChild(projectElement);
-            i++;
         });
     }
     else {
@@ -140,6 +150,9 @@ function displayProjects(projects, role) {
             const projectElement = document.createElement("div");
             projectElement.classList.add("project");
             projectElement.setAttribute("id", `project${i}`);
+            projectElement.onclick = () => {
+                window.location.hash = `#${i}`;
+            };
             projectElement.innerHTML = `
             <h2>${project.name}</h2>
             <p>${project.description}</p>
@@ -163,9 +176,8 @@ function displayProjects(projects, role) {
     }
 }
 
-async function editProject(index) {
-    console.log(editing);
-    console.log(editingIndex);
+async function editProject(event, index) {
+    event.stopPropagation();
     if (editing) {
         if (editingIndex != index) {
             await cancelEdit(editingIndex);
@@ -191,6 +203,7 @@ async function editProject(index) {
             window.location.href = "/";
         }
     }
+
     else if (data.user.role != 3) {
         alert("Error: Permission denied!");
         return;
@@ -205,16 +218,28 @@ async function editProject(index) {
     oldStatus = oldStatus.replace("<b>", "");
     oldStatus = oldStatus.replace("</b>", "");
 
+    const statusOptions = ["Not Started", "In Progress", "Completed"];
+    const select = document.createElement("select");
+    select.classList.add("edit-status");
+    statusOptions.forEach(option => {
+        const opt = document.createElement("option");
+        opt.value = option;
+        opt.text = option;
+        select.appendChild(opt);
+    });
+
     const projectElement = document.getElementById(`project${index}`);
     projectElement.innerHTML = `
-    <button class="edit-button" onclick="editProject(${index})"><span class="material-symbols-outlined">edit</span></button>
-    <br>
-    <textarea class="edit-title" value="${oldName}" type="text">${oldName}</textarea>
-    <input class="edit-description" value="${oldDescription}" type="text">
-    <input class="edit-status" value="${oldStatus}" type="text">
-    <br>
-    <button class="edit-save" onclick="saveEditedProject(${index}, '${oldName}')">SAVE</button>
-    <button class="edit-delete" onclick="deleteProject(${index})">DELETE</button>
+        <button class="edit-button" onclick="editProject(event, ${index})"><span class="material-symbols-outlined">cancel</span></button>
+        <br>
+        <textarea class="edit-title" value="${oldName}" type="text">${oldName}</textarea>
+        <input class="edit-description" value="${oldDescription}" type="text">
+    `;
+    projectElement.appendChild(select);
+    projectElement.innerHTML += `
+        <br>
+        <button class="edit-save material-symbols-outlined" onclick="saveEditedProject(event, ${index}, '${oldName}')">save</button>
+        <button class="edit-delete material-symbols-outlined" onclick="deleteProject(event, ${index})">delete_forever</button>
     `;
 }
 
@@ -249,7 +274,7 @@ async function cancelEdit(index) {
         project = data.projects[index];
         const projectElement = document.getElementById(`project${index}`);
         projectElement.innerHTML = `
-        <button class="edit-button" onclick="editProject(${index})"><span class="material-symbols-outlined">edit</span></button>
+        <button class="edit-button" onclick="editProject(event, ${index})"><span class="material-symbols-outlined">edit</span></button>
         <h2>${project.name}</h2>
         <p>${project.description}</p>
         <p>Status: <b>${project.status}</b></p>
@@ -261,7 +286,8 @@ async function cancelEdit(index) {
     editingIndex = -1;
 }
 
-async function saveEditedProject(index, oldName) {
+async function saveEditedProject(event, index, oldName) {
+    event.stopPropagation();
     const response = await fetch("/checkUUID", {
         method: "GET",
         credentials: "same-origin", // Ensures cookies are sent with the request
@@ -281,7 +307,7 @@ async function saveEditedProject(index, oldName) {
 
     let newName = document.getElementById(`project${index}`).getElementsByTagName("textarea")[0].value;
     let newDescription = document.getElementById(`project${index}`).getElementsByTagName("input")[0].value;
-    let newStatus = document.getElementById(`project${index}`).getElementsByTagName("input")[1].value;
+    let newStatus = document.getElementById(`project${index}`).getElementsByTagName("select")[0].value;
 
     await fetch("/saveEditedProject", {
         method: "POST",
@@ -299,7 +325,8 @@ async function saveEditedProject(index, oldName) {
     window.location.reload();
 }
 
-async function deleteProject(index) {
+async function deleteProject(event, index) {
+    event.stopPropagation();
     const response = await fetch("/checkUUID", {
         method: "GET",
         credentials: "same-origin", // Ensures cookies are sent with the request
@@ -376,6 +403,23 @@ async function createNewProject() {
             alert("Error creating project!");
         }
     })
+    window.location.reload();
+}
+
+async function openProject(index) {
+    if (index == "" || isNaN(index)) {
+        return;
+    }
+    if (editing) {
+        window.location.hash = `#`;
+        return;
+    }
+    document.getElementById("projects").style.display = "none";
+    document.getElementById("projectInfo").style.display = "block";
+}
+
+async function closeProjectInfo() {
+    window.location.hash = `#`;
     window.location.reload();
 }
 
