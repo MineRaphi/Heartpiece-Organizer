@@ -328,6 +328,15 @@ async function saveEditedProject(event, index, oldName) {
 
 async function deleteProject(event, index) {
     event.stopPropagation();
+
+    if (!editing) {
+        return;
+    }
+
+    if (!confirm("Are you sure you want to delete this project?")) {
+        return;
+    }
+
     const response = await fetch("/checkUUID", {
         method: "GET",
         credentials: "same-origin", // Ensures cookies are sent with the request
