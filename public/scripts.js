@@ -19,7 +19,7 @@ window.addEventListener("hashchange", () => {
 // global variables
 let editing = false;
 let editingIndex = -1;
-const statusOptions = ["Not Started", "In Progress", "Completed"];
+const statusOptions = ["Approval pending", "Approved", "Pre-Production", "Production", "Post-Production", "Finished", "Released"];
 
 async function login() {
     var username = document.getElementById("username").value;
