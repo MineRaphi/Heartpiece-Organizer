@@ -19,6 +19,7 @@ window.addEventListener("hashchange", () => {
 // global variables
 let editing = false;
 let editingIndex = -1;
+const statusOptions = ["Not Started", "In Progress", "Completed"];
 
 async function login() {
     var username = document.getElementById("username").value;
@@ -166,12 +167,11 @@ function displayProjects(projects, role) {
     if (role == 3) {
         const projectElement = document.createElement("div");
         projectElement.classList.add("new-project");
+        projectElement.setAttribute("id", `newProject`);
         projectElement.innerHTML = `
             <h1>${"+"}</h1>
         `;
-        projectElement.addEventListener("click", () => {
-            createNewProject();
-        });
+        projectElement.addEventListener("click", createNewProject);
         container.appendChild(projectElement);
     }
 }
@@ -219,7 +219,6 @@ async function editProject(event, index) {
     oldStatus = oldStatus.replace("<b>", "");
     oldStatus = oldStatus.replace("</b>", "");
 
-    const statusOptions = ["Not Started", "In Progress", "Completed"];
     const select = document.createElement("select");
     select.classList.add("edit-status");
     statusOptions.forEach(option => {
@@ -379,19 +378,73 @@ async function createNewProject() {
         alert("Error: Permission denied!");
         return;
     }
-    
-    const projectName = prompt("Enter the name of the new project:");
-    if (projectName == null || projectName == "") {
+
+    const select = document.createElement("select");
+    select.classList.add("edit-status");
+    statusOptions.forEach(option => {
+        const opt = document.createElement("option");
+        opt.value = option;
+        opt.text = option;
+        select.appendChild(opt);
+    });
+
+    const projectElement = document.getElementById(`newProject`);
+    projectElement.className = "project";
+    projectElement.removeEventListener("click", createNewProject);
+    projectElement.innerHTML = `
+    <button class="edit-button" onclick="cancelNewProject(event)"><span class="material-symbols-outlined">cancel</span></button>
+    <br>
+    <textarea class="edit-title" value="" placeholder="Project Title" type="text"></textarea>
+    <input class="edit-description" value="" placeholder="Project Description" type="text">
+    `;
+    projectElement.appendChild(select);
+    projectElement.innerHTML += `
+    <br>
+    <button class="edit-save material-symbols-outlined" onclick="saveNewProject(event)">save</button>
+    <button class="edit-delete material-symbols-outlined" onclick="cancelNewProject(event)">cancel</button>
+    `;
+}
+
+async function cancelNewProject(event) {
+    event.stopPropagation();
+    projectElement = document.getElementById(`newProject`);
+    projectElement.className = "new-project";
+    projectElement.innerHTML = `
+        <h1>${"+"}</h1>
+    `;
+    projectElement.addEventListener("click", createNewProject);
+}
+
+async function saveNewProject(event) {
+    event.stopPropagation();
+    const response = await fetch("/checkUUID", {
+        method: "GET",
+        credentials: "same-origin", // Ensures cookies are sent with the request
+    });
+
+    const data = await response.json();
+    if (!data.success) {
+        if (window.location.pathname != "/") {
+            window.location.href = "/";
+        }
+    }
+    else if (data.user.role != 3) {
+        alert("Error: Permission denied!");
+        window.location.href = "/home/";
         return;
     }
-    const projectDescription = prompt("Enter the description of the new project:");
-    if (projectDescription == null || projectDescription == "") {
+
+    let projectName = document.getElementById(`newProject`).getElementsByTagName("textarea")[0].value;
+    let projectDescription = document.getElementById(`newProject`).getElementsByTagName("input")[0].value;
+    let projectStatus = document.getElementById(`newProject`).getElementsByTagName("select")[0].value;
+    if (projectName == "" || projectDescription == "") {
+        alert("Project name or description cannot be empty!");
         return;
     }
-    const projectStatus = prompt("Enter the status of the new project:");
-    if (projectStatus == null || projectStatus == "") {
-        return;
-    }
+    projectName = projectName.replace("\n", " ");
+    projectDescription = projectDescription.replace("\n", " ");
+    projectStatus = projectStatus.replace("\n", " ");
+
     await fetch("/createNewProject", {
         method: "POST",
         headers: {
