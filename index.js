@@ -241,6 +241,26 @@ app.post("/deleteProject", (req, res) => {
     res.send("Project deleted successfully!");
 });
 
+app.get("/getProjectDetails", (req, res) => {
+    const { projectIndex } = req.query;
+
+    if (!projectIndex) {
+        return res.status(400).send("Project index is required");
+    }
+    if (isNaN(projectIndex)) {
+        return res.status(400).send("Project index must be a number");
+    }
+    // Read projects.json
+    const projectsFilePath = path.join(__dirname, "/projects/projectList.json");
+    const projectsData = fs.readFileSync(projectsFilePath, "utf8");
+    const projectsObj = JSON.parse(projectsData);
+    const projects = projectsObj.projects;
+    const project = projects[projectIndex];
+    if (!project) return res.send("Project not found");
+    // Send project details
+    res.json(project.details);
+});
+
 async function saveUUID(username, uuid) {
     try {
         const usersFilePath = path.join(__dirname, "users.json");
