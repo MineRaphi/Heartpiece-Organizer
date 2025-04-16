@@ -152,8 +152,12 @@ app.post("/logout", (req, res) => {
 app.get("/getProjects", (req, res) => {
     try {
         const projectsData = fs.readFileSync(path.join(__dirname, "/projects/projectList.json"), "utf8");
-        const projects = JSON.parse(projectsData);
-        res.json(projects); // Send JSON directly (no extra wrapping)
+        const parsed = JSON.parse(projectsData);
+
+        // Strip `details` from each project
+        const sanitizedProjects = parsed.projects.map(({ details, ...rest }) => rest);
+
+        res.json({ projects: sanitizedProjects });
     } catch (error) {
         console.error("Error reading JSON file:", error);
         res.status(500).json({ error: "Internal Server Error" });
