@@ -478,8 +478,26 @@ async function openProject(index) {
         window.location.hash = `#`;
         return;
     }
+
+    loadProjectInfo(index);
+
     document.getElementById("projects").style.display = "none";
     document.getElementById("projectInfo").style.display = "block";
+
+}
+
+async function loadProjectInfo(index) {
+    await fetch("/getProjects", {
+        method: "GET",
+        credentials: "include"
+    })
+    .then(response => response.json())  // Parse JSON directly
+    .then(data => {
+        document.getElementById("infoProjectName").innerHTML = data.projects[index].name;
+        document.getElementById("infoProjectDescription").innerHTML = data.projects[index].description;
+    })
+    .catch(error => console.error("Error:", error));
+
 }
 
 async function closeProjectInfo() {
