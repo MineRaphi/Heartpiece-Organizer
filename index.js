@@ -8,6 +8,7 @@ const crypto = require("crypto");
 
 const saltRounds = 10;
 const app = express();
+const projectListPath = "/projectList.json";
 
 app.use(cookieParser());
 
@@ -151,7 +152,7 @@ app.post("/logout", (req, res) => {
 
 app.get("/getProjects", (req, res) => {
     try {
-        const projectsData = fs.readFileSync(path.join(__dirname, "/projects/projectList.json"), "utf8");
+        const projectsData = fs.readFileSync(path.join(__dirname, projectListPath), "utf8");
         const parsed = JSON.parse(projectsData);
 
         // Strip `details` from each project
@@ -172,7 +173,7 @@ app.post("/createNewProject", (req, res) => {
     }
 
     // Read projects.json
-    const projectsFilePath = path.join(__dirname, "/projects/projectList.json");
+    const projectsFilePath = path.join(__dirname, projectListPath);
     const projectsData = fs.readFileSync(projectsFilePath, "utf8");
     const projectsObj = JSON.parse(projectsData);
     const projects = projectsObj.projects;
@@ -201,7 +202,7 @@ app.post("/saveEditedProject", (req, res) => {
     newName = newName.replace("\n", " ");
 
     // Read projects.json
-    const projectsFilePath = path.join(__dirname, "/projects/projectList.json");
+    const projectsFilePath = path.join(__dirname, projectListPath);
     const projectsData = fs.readFileSync(projectsFilePath, "utf8");
     const projectsObj = JSON.parse(projectsData);
     const projects = projectsObj.projects;
@@ -229,7 +230,7 @@ app.post("/deleteProject", (req, res) => {
     }
 
     // Read projects.json
-    const projectsFilePath = path.join(__dirname, "/projects/projectList.json");
+    const projectsFilePath = path.join(__dirname, projectListPath);
     const projectsData = fs.readFileSync(projectsFilePath, "utf8");
     const projectsObj = JSON.parse(projectsData);
     const projects = projectsObj.projects;
@@ -255,7 +256,7 @@ app.get("/getProjectDetails", (req, res) => {
         return res.status(400).send("Project index must be a number");
     }
     // Read projects.json
-    const projectsFilePath = path.join(__dirname, "/projects/projectList.json");
+    const projectsFilePath = path.join(__dirname, projectListPath);
     const projectsData = fs.readFileSync(projectsFilePath, "utf8");
     const projectsObj = JSON.parse(projectsData);
     const projects = projectsObj.projects;
