@@ -279,16 +279,21 @@ body > footer {
 #statusList {
     align-self: center;
     margin: auto;
-    border: 1px solid black;
+    border: 5px solid black;
     border-collapse: collapse;
 }
 
 #statusList td {
-    border: 1px solid black;
+    border: 2px solid black;
 }
 
 #statusList th {
-    border: 1px solid black;
+    border: 2px solid black;
+}
+
+.spacer-row {
+    height: 1px;
+    background-color: black;
 }
 
 @media (max-width: 900px) {

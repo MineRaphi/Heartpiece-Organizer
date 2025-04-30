@@ -510,11 +510,47 @@ async function loadProjectInfo(index) {
         const sceneCount = data.scenes.length;
         let sceneCuts = [];
 
+        table.innerHTML = `
+        <thead>
+            <tr>
+                <th colspan="2"></th>
+                <th colspan="4">Pre-Production</th>
+                <th colspan="4">Production</th>
+                <th colspan="6">Post-Production</th>
+                <th colspan="2">Distribute</th>
+            </tr>
+            <tr>
+                <th>Scenes</th>
+                <th>Cuts</th>
+                <th>Script</th>
+                <th>Storyboard</th>
+                <th>Animatic</th>
+                <th>Voice Acting</th>
+                <th>Rough Animation</th>
+                <th>Cleanup</th>
+                <th>Coloring</th>
+                <th>Background</th>
+                <th>FX-Animation</th>
+                <th>Compositing</th>
+                <th>Music</th>
+                <th>Sound Design</th>
+                <th>Mix/Master</th>
+                <th>Render</th>
+                <th>Dubbing</th>
+                <th>Localisation</th>
+            </tr>
+        </thead>
+        `;
+
         for(let i=0; i<sceneCount; i++) {
             sceneCuts[i] = data.scenes[i].cuts.length;
         }
 
         for (let i = 0; i < sceneCount; i++) {
+            const row = table.insertRow();
+            const cell = row.insertCell();
+            cell.className = "spacer-row";
+            cell.colSpan = 18;
             for (let j = 0; j < sceneCuts[i]; j++) {
                 const row = table.insertRow();
                 for (let k = 0; k < cols; k++) {
@@ -534,27 +570,11 @@ async function loadProjectInfo(index) {
                         else if (k==2 && j==0) {
                             const cell = row.insertCell();
                             cell.rowSpan = sceneCuts[i];
-                            if (data.scenes[i].script == 1) {
-                                cell.style.background = "red";
-                            }
-                            else if (data.scenes[i].script == 2) {
-                                cell.style.background = "yellow";
-                            }
-                            else if (data.scenes[i].script == 3) {
-                                cell.style.background = "green";
-                            }
+                            setCellColor(cell, data.scenes[i].script);
                         }
                         else {
                             const cell = row.insertCell();
-                            if (data.scenes[i].cuts[j][k] == 1) {
-                                cell.style.background = "red";
-                            }
-                            else if (data.scenes[i].cuts[j][k] == 2) {
-                                cell.style.background = "yellow";
-                            }
-                            else if (data.scenes[i].cuts[j][k] == 3) {
-                                cell.style.background = "green";
-                            }
+                            setCellColor(cell, data.scenes[i].cuts[j][k]);
                         }
                     }
                 }
@@ -565,6 +585,18 @@ async function loadProjectInfo(index) {
     .catch(error => console.error("Error:", error));
 }
 
+function setCellColor(cell, colorId) {
+    if (colorId == 1) {
+        cell.style.background = "red";
+    }
+    else if (colorId == 2) {
+        cell.style.background = "yellow";
+    }
+    else if (colorId == 3) {
+        cell.style.background = "green";
+    }
+}
+ 
 async function closeProjectInfo() {
     window.location.hash = `#`;
     window.location.reload();
