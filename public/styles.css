@@ -276,6 +276,21 @@ body > footer {
     text-align: center;
 }
 
+#statusList {
+    align-self: center;
+    margin: auto;
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+#statusList td {
+    border: 1px solid black;
+}
+
+#statusList th {
+    border: 1px solid black;
+}
+
 @media (max-width: 900px) {
     #projects {
         grid-template-columns: repeat(1, 1fr);

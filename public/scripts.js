@@ -498,6 +498,71 @@ async function loadProjectInfo(index) {
     })
     .catch(error => console.error("Error:", error));
 
+    await fetch(`/getProjectDetails?projectIndex=${index}`, {
+        method: "GET",
+        credentials: "include"
+    })
+    .then(response => response.json())  // Parse JSON directly
+    .then(data => {
+        const table = document.getElementById('statusList');
+        const cols = 18;
+        const rows = data.scenes.reduce((sum, scene) => sum + scene.cuts.length, 0);
+        const sceneCount = data.scenes.length;
+        let sceneCuts = [];
+
+        for(let i=0; i<sceneCount; i++) {
+            sceneCuts[i] = data.scenes[i].cuts.length;
+        }
+
+        for (let i = 0; i < sceneCount; i++) {
+            for (let j = 0; j < sceneCuts[i]; j++) {
+                const row = table.insertRow();
+                for (let k = 0; k < cols; k++) {
+                    if (j==0 && k==0) {
+                        const cell = row.insertCell();
+                        cell.rowSpan = sceneCuts[i];
+                        cell.innerHTML = i+1;
+                    }
+                    else if (j!=0 && k==0 || j!=0 && k==2) {
+                        continue;
+                    }
+                    else {
+                        if (k==1) {
+                            const cell = row.insertCell();
+                            cell.innerHTML = j+1;
+                        }
+                        else if (k==2 && j==0) {
+                            const cell = row.insertCell();
+                            cell.rowSpan = sceneCuts[i];
+                            if (data.scenes[i].script == 1) {
+                                cell.style.background = "red";
+                            }
+                            else if (data.scenes[i].script == 2) {
+                                cell.style.background = "yellow";
+                            }
+                            else if (data.scenes[i].script == 3) {
+                                cell.style.background = "green";
+                            }
+                        }
+                        else {
+                            const cell = row.insertCell();
+                            if (data.scenes[i].cuts[j][k] == 1) {
+                                cell.style.background = "red";
+                            }
+                            else if (data.scenes[i].cuts[j][k] == 2) {
+                                cell.style.background = "yellow";
+                            }
+                            else if (data.scenes[i].cuts[j][k] == 3) {
+                                cell.style.background = "green";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+    })
+    .catch(error => console.error("Error:", error));
 }
 
 async function closeProjectInfo() {
