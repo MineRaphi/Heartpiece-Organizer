@@ -296,6 +296,24 @@ body > footer {
     background-color: black;
 }
 
+#saveInfoButton {
+    border-radius: 10px;
+    border: none;
+    background-color: #FF8C42;
+    color: #e1e1e1;
+    font-size: 2rem;
+    padding-left: 10px;
+    padding-right: 10px;
+    align-self: center;
+    margin-top: 1vh;
+    margin-left: 93vw;
+}
+
+#saveInfoButton:hover {
+    background-color: #ee7c35;
+    cursor: pointer;
+}
+
 @media (max-width: 900px) {
     #projects {
         grid-template-columns: repeat(1, 1fr);

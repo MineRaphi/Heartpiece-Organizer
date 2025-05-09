@@ -266,6 +266,25 @@ app.get("/getProjectDetails", (req, res) => {
     res.json(project.details);
 });
 
+app.post("/saveProjectDetails", (req, res) => {
+    const saveData = req.body.saveData;
+    const index = req.body.index
+
+    console.log(saveData);
+    console.log(index);
+
+    const projectsFilePath = path.join(__dirname, projectListPath);
+    const projectsData = fs.readFileSync(projectsFilePath, "utf8");
+    const projectsObj = JSON.parse(projectsData);
+    let projects = projectsObj.projects;
+
+    projects[index].details = saveData;
+
+    const writeData = {projects};
+    fs.writeFileSync(projectsFilePath, JSON.stringify(writeData, null, 4), "utf8");
+    res.status(200).send("Success");
+});
+
 async function saveUUID(username, uuid) {
     try {
         const usersFilePath = path.join(__dirname, "users.json");

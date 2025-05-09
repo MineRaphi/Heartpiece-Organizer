@@ -571,10 +571,16 @@ async function loadProjectInfo(index) {
                             const cell = row.insertCell();
                             cell.rowSpan = sceneCuts[i];
                             setCellColor(cell, data.scenes[i].script);
+                            cell.onclick = () => {
+                                changeCellState(cell, data.scenes[i].script);
+                            };
                         }
                         else {
                             const cell = row.insertCell();
                             setCellColor(cell, data.scenes[i].cuts[j][k]);
+                            cell.onclick = () => {
+                                changeCellState(cell, data.scenes[i].cuts[j][k]);
+                            };
                         }
                     }
                 }
@@ -586,7 +592,10 @@ async function loadProjectInfo(index) {
 }
 
 function setCellColor(cell, colorId) {
-    if (colorId == 1) {
+    if (colorId == 0 || colorId == undefined || isNaN(colorId)) {
+        cell.style.background = "gray";
+    }
+    else if (colorId == 1) {
         cell.style.background = "red";
     }
     else if (colorId == 2) {
@@ -596,7 +605,133 @@ function setCellColor(cell, colorId) {
         cell.style.background = "green";
     }
 }
- 
+
+function changeCellState(cell, currentColor) {
+    if (isNaN(currentColor)) {
+        currentColor = 0;
+    }
+    let color = currentColor+1;
+    if (color>3) {
+        color = 1;
+    }
+    setCellColor(cell, color);
+    cell.onclick = () => {
+        changeCellState(cell, color);
+    };
+}
+
+async function saveProjectState() {
+    const response = await fetch("/checkUUID", {
+        method: "GET",
+        credentials: "same-origin", // Ensures cookies are sent with the request
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+        if (window.location.pathname != "/") {
+            window.location.href = "/";
+        }
+    }
+    else if (data.user.role != 3) {
+        alert("Error: Permission denied!");
+        return;
+    }
+
+    const index = window.location.hash.substring(1);
+    let saveData;
+    
+    await fetch(`/getProjectDetails?projectIndex=${index}`, {
+        method: "GET",
+        credentials: "include"
+    })
+    .then(response => response.json())
+    .then(data => {
+        const table = document.getElementById('statusList');
+        const cols = 18;
+        const rows = data.scenes.reduce((sum, scene) => sum + scene.cuts.length, 0);
+        const sceneCount = data.scenes.length;
+        let sceneCuts = [];
+
+        saveData = data;
+
+        for(let i=0; i<sceneCount; i++) {
+            sceneCuts[i] = data.scenes[i].cuts.length;
+        }
+
+        // table.rows[3].cells[2].style.background
+        saveData.scenes[0].script = getIdFromColor(table.rows[3].cells[2].style.background);
+
+        for(let i=0, j=3; i<sceneCount; i++) {
+            saveData.scenes[i].script = getIdFromColor(table.rows[j].cells[2].style.background);
+            j+=sceneCuts[i]+1;
+        }
+
+        let row=3;
+        for(let i=0; i<sceneCount; i++) {
+            for(let j=0; j<sceneCuts[i]; j++) {
+                let cols = 16;
+                let k = 1;
+                if(j==0) {
+                    cols+=2;
+                    k+=2
+                }
+                for(; k<cols; k++) {
+                    if (!table.rows[row]) {
+                        console.warn(`Row ${row} does not exist`);
+                    }
+                    if (!table.rows[row].cells[k]) {
+                        console.warn(`Cell ${k} does not exist in row ${row}`);
+                    }
+                    if (j==0) {
+                        saveData.scenes[i].cuts[j][k] = getIdFromColor(table.rows[row].cells[k].style.background);
+                    }
+                    else {
+                        saveData.scenes[i].cuts[j][k+2] = getIdFromColor(table.rows[row].cells[k].style.background);
+                    }
+                }
+                row++;
+            }
+            row++;
+        }
+    });
+
+    console.log(saveData);
+
+    await fetch("/saveProjectDetails", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ saveData, index })
+    })
+    .then(response => response.text())
+    .then(data => {
+        if (data == "Success") {
+            alert("Project Details successfully saved!");
+            window.location.reload();
+        }
+        else {
+            alert("Error saving Project Details!");
+        }
+    });
+}
+
+function getIdFromColor(color) {
+    if (color == "red") {
+        return 1;
+    }
+    else if (color == "yellow") {
+        return 2;
+    }
+    else if (color == "green") {
+        return 3;
+    }
+    else {
+        return 0;
+    }
+}
+
 async function closeProjectInfo() {
     window.location.hash = `#`;
     window.location.reload();
