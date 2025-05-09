@@ -1,7 +1,7 @@
 {
   "name": "heartpiece-organizer",
-  "version": "1.0.0",
-  "description": "Used to manage .hpo files.",
+  "version": "0.0.0",
+  "description": "Heartpiece-Organizer (HPO) is a web-based tool designed to help Heartpiece-Anime manage projects and track work states in an efficient and organized manner. This application allows users to manage projects, control progress, and view data in real-time.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -12,8 +12,8 @@
     "url": "git+https://github.com/MineRaphi/HeartPiece-Organizer.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "MineRaphi",
+  "license": "GPL-3.0",
   "bugs": {
     "url": "https://github.com/MineRaphi/HeartPiece-Organizer/issues"
   },
