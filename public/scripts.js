@@ -16,10 +16,30 @@ window.addEventListener("hashchange", () => {
     openProject(window.location.hash.substring(1));
 });
 
+window.addEventListener("resize", () => {
+    const table = document.getElementById('statusList');
+    const button = document.getElementById("sceneAddButton");
+
+    const cell = table.rows[2+currentProjectScenes*2-1].cells[0];
+    const rect = cell.getBoundingClientRect();
+
+    button.style.left = rect.left + 17 + "px";
+    button.style.top = rect.bottom - 7 + "px";
+});
+
+document.addEventListener("mousemove", (e) => {
+    const button = document.getElementById("sceneAddButton");
+    changeOpacityWithCursor(button, e.clientX, e.clientY, 1, 40);
+});
+
 // global variables
 let editing = false;
 let editingIndex = -1;
 const statusOptions = ["Approval pending", "Approved", "Pre-Production", "Production", "Post-Production", "Finished", "Released"];
+let newProjectScenes = 0;
+let newProjectCuts = [];
+let currentProjectScenes = 0;
+let currentProjectCuts = [];
 
 async function login() {
     var username = document.getElementById("username").value;
@@ -291,7 +311,7 @@ async function saveEditedProject(event, index, oldName) {
     event.stopPropagation();
     const response = await fetch("/checkUUID", {
         method: "GET",
-        credentials: "same-origin", // Ensures cookies are sent with the request
+        credentials: "same-origin",
     });
 
     const data = await response.json();
@@ -317,7 +337,7 @@ async function saveEditedProject(event, index, oldName) {
         },
         body: JSON.stringify({ newName, newDescription, newStatus, oldName })
     })
-    .then(response => response.text())  // Read the response as text
+    .then(response => response.text())
     .then(data => {
         if (data != "Project edited successfully!") {
             alert("Error editing project!");
@@ -508,6 +528,7 @@ async function loadProjectInfo(index) {
         const cols = 18;
         const rows = data.scenes.reduce((sum, scene) => sum + scene.cuts.length, 0);
         const sceneCount = data.scenes.length;
+        currentProjectScenes = sceneCount;
         let sceneCuts = [];
 
         table.innerHTML = `
@@ -545,6 +566,8 @@ async function loadProjectInfo(index) {
         for(let i=0; i<sceneCount; i++) {
             sceneCuts[i] = data.scenes[i].cuts.length;
         }
+
+        currentProjectCuts = sceneCuts;
 
         for (let i = 0; i < sceneCount; i++) {
             const row = table.insertRow();
@@ -586,7 +609,19 @@ async function loadProjectInfo(index) {
                 }
             }
         }
+
+        const button = document.getElementById("sceneAddButton");
+
+        const cell = table.rows[2+currentProjectScenes*2-1].cells[0];
+        const rect = cell.getBoundingClientRect();
+
+        button.style.position = "absolute";
+        button.style.left = rect.left + 17 + "px";
+        button.style.top = rect.bottom - 7 + "px";
         
+        button.onclick = () => {
+            addScene(table, sceneCount);
+        };
     })
     .catch(error => console.error("Error:", error));
 }
@@ -650,16 +685,51 @@ async function saveProjectState() {
         const table = document.getElementById('statusList');
         const cols = 18;
         const rows = data.scenes.reduce((sum, scene) => sum + scene.cuts.length, 0);
-        const sceneCount = data.scenes.length;
+        const sceneCount = data.scenes.length + newProjectScenes;
         let sceneCuts = [];
 
         saveData = data;
 
         for(let i=0; i<sceneCount; i++) {
-            sceneCuts[i] = data.scenes[i].cuts.length;
+            if (i<sceneCount-newProjectScenes) {
+                sceneCuts[i] = data.scenes[i].cuts.length;
+            }
+            else {
+                sceneCuts[i] = newProjectScenes[i-(sceneCount-newProjectScenes)];
+            }
         }
 
-        // table.rows[3].cells[2].style.background
+        for(let i=0; i<newProjectCuts.length; i++) {
+            console.log(sceneCuts);
+            sceneCuts.pop();
+            sceneCuts.push(newProjectCuts[i]);
+        }
+
+        console.log(sceneCuts);
+
+        while (saveData.scenes.length < sceneCount) {
+            saveData.scenes.push({ "script": 0, "cuts": [[
+                null,
+                null,
+                null,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                1
+            ]] });
+        }
+
         saveData.scenes[0].script = getIdFromColor(table.rows[3].cells[2].style.background);
 
         for(let i=0, j=3; i<sceneCount; i++) {
@@ -669,6 +739,7 @@ async function saveProjectState() {
 
         let row=3;
         for(let i=0; i<sceneCount; i++) {
+            console.log(sceneCuts[i]);
             for(let j=0; j<sceneCuts[i]; j++) {
                 let cols = 16;
                 let k = 1;
@@ -710,6 +781,8 @@ async function saveProjectState() {
         if (data == "Success") {
             alert("Project Details successfully saved!");
             window.location.reload();
+            newProjectScenes = 0;
+            newProjectCuts = [];
         }
         else {
             alert("Error saving Project Details!");
@@ -735,6 +808,62 @@ function getIdFromColor(color) {
 async function closeProjectInfo() {
     window.location.hash = `#`;
     window.location.reload();
+}
+
+function addScene(table) {
+    const spacerRow = table.insertRow();
+    const spacerCell = spacerRow.insertCell();
+    spacerCell.className = "spacer-row";
+    spacerCell.colSpan = 18;
+
+    const newRow = table.insertRow();
+    const sceneCell = newRow.insertCell();
+    sceneCell.innerHTML = currentProjectScenes+1;
+    const cutCell = newRow.insertCell();
+    cutCell.innerHTML = "1";
+    for(let i=0; i<16; i++) {
+        const newCell = newRow.insertCell();
+        setCellColor(newCell, 1);
+        newCell.onclick = () => {
+            changeCellState(newCell, 1);
+        }
+    }
+    newProjectScenes++;
+    currentProjectScenes++;
+    newProjectCuts[newProjectCuts.length] = 1;
+
+    const button = document.getElementById("sceneAddButton");
+
+    const cell = table.rows[2+currentProjectScenes*2-1].cells[0];
+    const rect = cell.getBoundingClientRect();
+
+    button.style.left = rect.left + 17 + "px";
+    button.style.top = rect.bottom - 7 + "px";
+
+}
+
+function changeOpacityWithCursor(elem, mouseX, mouseY, minRadius, maxRadius) {
+    const rect = elem.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    let value = 0;
+
+    const dx = mouseX - centerX;
+    const dy = mouseY - centerY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance <= minRadius) {
+        value = 0;
+    };
+
+    if (distance >= maxRadius) {
+        value = 100;
+    };
+
+    value = ((distance - minRadius) / (maxRadius - minRadius)) * 100;
+    value = 100 - value;
+
+    elem.style.opacity = value / 100;
 }
 
 // Call the function to check the UUID
