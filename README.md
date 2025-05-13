@@ -1,6 +1,6 @@
 # Heartpiece-Organizer
 
-Heartpiece-Organizer (HPO) is a web-based tool designed to help Heartpiece-Anime manage projects and track work states in an efficient and organized manner. This application allows users to manage projects, control progress, and view data in real-time.
+Heartpiece-Organizer (HPO) is a web-based tool designed to help Heartpiece-Anime manage projects and track work states in an efficient and organized manner. This application allows users to manage projects, control progress, and view data.
 
 ## Overview
 
