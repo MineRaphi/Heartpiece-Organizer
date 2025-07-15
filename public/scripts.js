@@ -27,9 +27,23 @@ window.addEventListener("resize", () => {
     button.style.top = rect.bottom - 7 + "px";
 });
 
+window.addEventListener("resize", () => {
+    const table = document.getElementById('statusList');
+    const cutAddButton = document.getElementById("cutAddButton");
+
+    const cutCell = table.rows[2+currentProjectScenes*2-1].cells[0];
+    const cutRect = cutCell.getBoundingClientRect();
+
+    cutAddButton.style.position = "absolute";
+    cutAddButton.style.left = cutCell.left + 17 + "px";
+    cutAddButton.style.top = cutRect.bottom - 7 + "px";
+});
+
 document.addEventListener("mousemove", (e) => {
-    const button = document.getElementById("sceneAddButton");
-    changeOpacityWithCursor(button, e.clientX, e.clientY, 1, 40);
+    const sceneAddButton = document.getElementById("sceneAddButton");
+    changeOpacityWithCursor(sceneAddButton, e.clientX, e.clientY, 1, 40);
+    const cutAddButton = document.getElementById("cutAddButton");
+    changeOpacityWithCursor(cutAddButton, e.clientX, e.clientY, 1, 40);
 });
 
 // global variables
@@ -610,18 +624,33 @@ async function loadProjectInfo(index) {
             }
         }
 
-        const button = document.getElementById("sceneAddButton");
+        const sceneAddButton = document.getElementById("sceneAddButton");
 
-        const cell = table.rows[2+currentProjectScenes*2-1].cells[0];
-        const rect = cell.getBoundingClientRect();
+        const sceneCell = table.rows[2+currentProjectScenes*2-1].cells[0];
+        const sceneRect = sceneCell.getBoundingClientRect();
 
-        button.style.position = "absolute";
-        button.style.left = rect.left + 17 + "px";
-        button.style.top = rect.bottom - 7 + "px";
+        sceneAddButton.style.position = "absolute";
+        sceneAddButton.style.left = sceneRect.left + 17 + "px";
+        sceneAddButton.style.top = sceneRect.bottom - 7 + "px";
         
-        button.onclick = () => {
+        sceneAddButton.onclick = () => {
             addScene(table, sceneCount);
         };
+
+
+        const cutAddButton = document.getElementById("cutAddButton");
+
+        const cutCell = table.rows[2+currentProjectScenes*2-1].cells[1];
+        const cutRect = cutCell.getBoundingClientRect();
+
+        cutAddButton.style.position = "absolute";
+        cutAddButton.style.left = cutRect.left + 5 + "px";
+        cutAddButton.style.top = cutRect.bottom - 7 + "px";
+        
+        cutAddButton.onclick = () => {
+            alert("WIP");
+        };
+        
     })
     .catch(error => console.error("Error:", error));
 }
@@ -839,6 +868,10 @@ function addScene(table) {
 
     button.style.left = rect.left + 17 + "px";
     button.style.top = rect.bottom - 7 + "px";
+
+}
+
+function addCut(table) {
 
 }
 
