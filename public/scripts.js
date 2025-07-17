@@ -148,7 +148,7 @@ async function checkUUID() {
         }
         await fetch("/getProjects", {
             method: "GET",
-            credentials: "include"
+            credentials: "same-origin", // Ensures cookies are sent with the request
         })
         .then(response => response.json())  // Parse JSON directly
         .then(data => {
@@ -523,7 +523,7 @@ async function openProject(index) {
 async function loadProjectInfo(index) {
     await fetch("/getProjects", {
         method: "GET",
-        credentials: "include"
+        credentials: "same-origin"
     })
     .then(response => response.json())  // Parse JSON directly
     .then(data => {

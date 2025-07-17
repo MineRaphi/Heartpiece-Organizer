@@ -152,6 +152,14 @@ app.post("/logout", (req, res) => {
 
 app.get("/getProjects", (req, res) => {
     try {
+        const uuidFromCookie = req.cookies.uuid;
+
+        if (checkUUID(uuidFromCookie) != 0) {
+            console.error("Unauthorized requesed");
+            res.status(401).json({ error: "Unauthorized" });
+            return;
+        }
+
         const projectsData = fs.readFileSync(path.join(__dirname, projectListPath), "utf8");
         const parsed = JSON.parse(projectsData);
 
@@ -247,6 +255,14 @@ app.post("/deleteProject", (req, res) => {
 });
 
 app.get("/getProjectDetails", (req, res) => {
+    const uuidFromCookie = req.cookies.uuid;
+    
+    if (checkUUID(uuidFromCookie) != 0) {
+        console.error("Unauthorized requesed");
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+    }
+    
     const { projectIndex } = req.query;
 
     if (!projectIndex) {
@@ -319,6 +335,28 @@ async function genHash(password, saltRounds) {
 async function genUUID() {
     let uuid = crypto.randomUUID();
     return uuid;
+}
+
+function checkUUID(UUID) {
+    if (!UUID) {
+        return -1;
+    }
+
+    // Read users.json to find the user with this UUID
+    const usersData = fs.readFileSync(path.join(__dirname, "users.json"), "utf8");
+    const users = JSON.parse(usersData).users;
+
+    const user = users.find(user => user.uuid === UUID);
+    
+    if (user.uuid == "") {
+        return -1
+    }
+
+    if (user) {
+        return 0
+    } else {
+        return -1
+    }
 }
 
 
